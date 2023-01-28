@@ -3,16 +3,17 @@ import yaml
 import shutil
 import sys
 import argparse
+import joblib
 from deepethogram.projects import add_video_to_project
 
 
-SUPPORTED_VIDEO_FORMATS=".mp4", ".avi"]
+SUPPORTED_VIDEO_FORMATS=[".mp4", ".avi"]
 
 def get_parser():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--project-path")
-    ap.add_argument("--video_path")
+    ap.add_argument("--video-path")
     ap.add_argument("--mode", default="copy", choices=["copy", "symlink", "move"] )
     ap.add_argument("--new-name")
     ap.add_argument("--data-dir", default="DATA")
