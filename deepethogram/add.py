@@ -1,6 +1,7 @@
 import os.path
 import yaml
 import shutil
+import math
 import sys
 import argparse
 import joblib
@@ -13,11 +14,17 @@ def get_parser():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--project-path")
-    ap.add_argument("--video-path")
+    group = ap.add_mutually_exclusive_group()
+    group.add_argument("--video-path")
+    group.add_argument("--videos-dir")
+    ap.add_argument("--chunks", type=int, nargs="+")    
     ap.add_argument("--mode", default="copy", choices=["copy", "symlink", "move"] )
     ap.add_argument("--new-name")
     ap.add_argument("--data-dir", default="DATA")
     ap.add_argument("--model-dir", default="models")
+    ap.add_argument("--n-jobs", default=1)
+
+
     return ap
 
 def main():
@@ -31,8 +38,54 @@ def main():
     video_path = args.video_path
     new_name = args.new_name
     data_dir = args.data_dir
+    videos_dir = args.videos_dir
+    chunks = args.chunks
     model_path = args.model_path
-    
+
+     
+    if video_path is not None and videos_dir is None:
+        add_video(project_path, video_path, data_dir, model_path, new_name, mode)
+    else:
+        assert chunks is not None
+        add_video_chunks_parallel(project_path, videos_dir, data_dir, model_path, chunks=chunks, mode=mode, n_jobs=args.n_jobs)
+
+
+def add_video_chunks_parallel(chunks, *args, n_jobs=1, **kwargs):
+
+
+
+    partition_size = math.ceil(len(chunks) / n_jobs)
+    chunk_partition = [chunks[(i*partition_size):((i+1)*partition_size)] for i in range(n_jobs)]
+
+    Output = joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(
+        add_video_chunks
+    )(
+        *args, **kwargs, chunks=chunk_partition[i]
+    )
+        for i in range(len(chunk_partition))
+     
+    )
+
+    return Output
+
+
+
+def add_video_chunks(project_path, videos_dir, data_dir, model_path, chunks, mode):
+
+
+    for chunk in chunks:
+
+        video_path = os.path.join(videos_dir, str(chunk).zfill(6) + ".mp4")
+        flyhostel = video_path.split(os.path.sep)[-6]
+        X = video_path.split(os.path.sep)[-5]
+        date_time = video_path.split(os.path.sep)[-4]
+        chunk_padded = str(chunk).zfill(6)
+        new_name = "_".join([flyhostel, X, date_time, chunk_padded])
+        print(new_name)
+        add_video(project_path, video_path, data_dir, model_path, new_name, mode=mode)
+
+
+def add_video(project_path, video_path, data_dir, model_path, new_name, mode="copy"):
 
     with open(os.path.join(project_path, "project_config.yaml"), "r") as filehandle:
         cfg=yaml.load(filehandle, yaml.SafeLoader)
