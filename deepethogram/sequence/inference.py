@@ -274,6 +274,9 @@ def sequence_inference(cfg: DictConfig):
     elif type(directory_list) == str and directory_list == 'all':
         basedir = cfg.project.data_path
         directory_list = utils.get_subfiles(basedir, 'directory')
+    elif isinstance(directory_list, str) and directory_list.endswith(".txt"):
+        with open(directory_list, "r") as filehandle:
+            directory_list = [file.strip() for file in filehandle.readlines()]
 
     outputfiles = []
     for directory in directory_list:
