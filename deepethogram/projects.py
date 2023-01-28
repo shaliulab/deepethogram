@@ -87,7 +87,7 @@ def initialize_project(directory: Union[str, os.PathLike],
     return project_config
 
 
-def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], mode: str = 'copy') -> str:
+def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], mode: str = 'copy', basename: str = None) -> str:
     """
     Adds a video file to a DEG project.
 
@@ -136,7 +136,8 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
     else:
         video_is_directory = False
 
-    basename = os.path.basename(path_to_video)
+    if basename is None:
+        basename = os.path.basename(path_to_video)
     vidname = os.path.splitext(basename)[0]
 
     video_directory = os.path.join(datadir, vidname)
@@ -160,7 +161,7 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
     record = parse_subdir(video_directory)
     log.debug('New record after adding: {}'.format(record))
     utils.save_dict_to_yaml(record, os.path.join(video_directory, 'record.yaml'))
-    zscore_video(os.path.join(video_directory, basename), project)
+    zscore_video(os.path.join(video_directory, basename), project, isColor=project["project"]["isColor"])
     return new_path
 
 

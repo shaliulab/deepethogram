@@ -93,7 +93,7 @@ class StatsRecorder:
         return 'mean: {} std: {} n: {}'.format(self.mean, self.std, self.nobservations)
 
 
-def get_video_statistics(videofile, stride):
+def get_video_statistics(videofile, stride, isColor=True):
     image_stats = StatsRecorder()
     with deepethogram.file_io.VideoReader(videofile) as reader:
         log.debug('N frames: {}'.format(len(reader)))
@@ -104,13 +104,7 @@ def get_video_statistics(videofile, stride):
                 log.warning('Error reading frame {} from video {}'.format(i, videofile))
                 continue
             image = image.astype(float) / 255
-            image = image.transpose(2, 1, 0)
-            # image = image[np.newaxis,...]
-            # N, C, H, W = image.shape
-            image = image.reshape(3, -1).transpose(1, 0)
-            # image = image.reshape(N, C, -1).squeeze().transpose(1, 0)
-            # if i == 0:
-            #     print(image.shape)
+            image = image.transpose(2, 1, 0).reshape(3, -1).transpose(1, 0)
             image_stats.update(image)
 
     log.info('final stats: {}'.format(image_stats))
@@ -126,7 +120,7 @@ def get_video_statistics(videofile, stride):
     return imdata
 
 
-def zscore_video(videofile: Union[str, os.PathLike], project_config: dict, stride: int = 10):
+def zscore_video(videofile: Union[str, os.PathLike], project_config: dict, stride: int = 10,  **kwargs):
     """calculates channel-wise mean and standard deviation for input video.
 
     Calculates mean and std deviation independently for each input video channel. Grayscale videos are converted to RGB.
@@ -149,7 +143,7 @@ def zscore_video(videofile: Union[str, os.PathLike], project_config: dict, strid
     # transforms = get_transforms_from_config(config)
     # xform = transforms['train']
     log.info('zscoring file: {}'.format(videofile))
-    imdata = get_video_statistics(videofile, stride)
+    imdata = get_video_statistics(videofile, stride, **kwargs)
 
     fname = os.path.join(os.path.dirname(videofile), 'stats.yaml')
     dictionary = {}
@@ -168,6 +162,13 @@ def update_project_with_normalization(norm_dict: dict, project_config: dict):
     if 'normalization' not in project_config['augs'].keys():
         raise ValueError('Must have project_config/augs/normalization field: {}'.format(project_config))
     old_rgb = project_config['augs']['normalization']
+    
+    if not project_config["project"]["isColor"]:
+    
+        old_rgb["augs"]["mean"]=old_rgb["augs"]["mean"][0]
+        old_rgb["augs"]["std"]=old_rgb["augs"]["std"][0]
+        
+    
     if old_rgb is not None and old_rgb['N'] is not None and old_rgb['mean'] is not None:
         old_mean_total = old_rgb['N'] * np.array(old_rgb['mean'])
         old_std_total = old_rgb['N'] * np.array(old_rgb['std'])
