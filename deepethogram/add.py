@@ -70,18 +70,21 @@ def add_video_chunks_parallel(chunks, *args, n_jobs=1, **kwargs):
 
 
 
+def build_new_name(video_path, chunk):
+    flyhostel = video_path.split(os.path.sep)[-6]
+    X = video_path.split(os.path.sep)[-5]
+    date_time = video_path.split(os.path.sep)[-4]
+    chunk_padded = str(chunk).zfill(6)
+    return "_".join([flyhostel, X, date_time, chunk_padded])
+
+
 def add_video_chunks(project_path, videos_dir, data_dir, model_path, chunks, mode):
 
 
     for chunk in chunks:
 
         video_path = os.path.join(videos_dir, str(chunk).zfill(6) + ".mp4")
-        flyhostel = video_path.split(os.path.sep)[-6]
-        X = video_path.split(os.path.sep)[-5]
-        date_time = video_path.split(os.path.sep)[-4]
-        chunk_padded = str(chunk).zfill(6)
-        new_name = "_".join([flyhostel, X, date_time, chunk_padded])
-        print(new_name)
+        new_name=build_new_name(video_path, chunk)
         add_video(project_path, video_path, data_dir, model_path, new_name, mode=mode)
 
 
