@@ -33,12 +33,13 @@ def main():
 
     if new_name is not None:
         assert os.path.splitext(new_name)[1] in [".mp4", ".avi"]
-        video_path_copied = os.path.join(os.path.dirname(video_path), new_name)
-        shutil.copyfile(video_path, video_path_copied)
+        # video_path_copied = os.path.join(project_path, "DATA", os.path.splitext(new_name)[0], new_name)
+        # os.makedirs(os.path.dirname(video_path_copied))
+        # shutil.copyfile(video_path, video_path_copied)
     else:
-        video_path_copied=video_path
+        new_name = os.path.basename(video_path)        
 
-    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path_copied, mode='copy')
+    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path, mode='copy', basename=new_name)
     print(transferred_file)
 
 
