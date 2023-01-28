@@ -10,17 +10,19 @@ def main():
     args = sys.argv
     
     if len(args) == 3:
-        _, project_path, video_path = args
+        _, project_path, video_path, mode = args
         new_name = None
 
     elif len(args) == 4:
-        _, project_path, video_path, new_name = args
+        _, project_path, video_path, new_name, mode = args
         
     else:
         print("Usage:")
         print("add.py <project_path> <video_path> [new_name]")
         return
-        
+
+
+    assert mode in ["copy", "symlink", "move"] 
 
     with open(os.path.join(project_path, "project_config.yaml"), "r") as filehandle:
         cfg=yaml.load(filehandle, yaml.SafeLoader)
@@ -39,7 +41,7 @@ def main():
     else:
         new_name = os.path.basename(video_path)        
 
-    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path, mode='copy', basename=new_name)
+    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path, mode=mode, basename=new_name)
     print(transferred_file)
 
 
