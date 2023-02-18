@@ -10,7 +10,9 @@ import joblib
 import yaml
 
 from deepethogram.projects import add_video_to_project
+from vidio.read import OpenCVReader
 
+ROIS_FILENAME=OpenCVReader.ROIS_FILENAME
 
 SUPPORTED_VIDEO_FORMATS=[".mp4", ".avi"]
 
@@ -55,23 +57,24 @@ def main():
     chunks = args.chunks
 
     stride=args.stride
+    with open(os.path.join(args.project_path, "project_config.yaml"), "r") as filehandle:
+        cfg=yaml.load(filehandle, yaml.SafeLoader)
+
 
     if video_path is not None and videos_dir is None:
         add_video(
-            project_path, video_path, data_dir, new_name, mode,
-            stride=stride, width=args.width. height=args.height
+            cfg, project_path, video_path, data_dir, new_name, mode,
+            stride=stride, width=args.width, height=args.height
         )
     else:
         assert chunks is not None
         add_video_chunks_parallel(
-            chunks, project_path, videos_dir, data_dir,
+            chunks, cfg, project_path, videos_dir, data_dir,
             mode=mode, stride=stride, n_jobs=args.n_jobs,
             width=args.width, height=args.height)
 
 
 def add_video_chunks_parallel(chunks, *args, n_jobs=1, **kwargs):
-
-
 
     partition_size = math.ceil(len(chunks) / n_jobs)
     chunk_partition_ = [chunks[(i*partition_size):((i+1)*partition_size)] for i in range(n_jobs)]
@@ -80,7 +83,6 @@ def add_video_chunks_parallel(chunks, *args, n_jobs=1, **kwargs):
     for block in chunk_partition_:
         if block:
             chunk_partition.append(block)
-            print(block)
 
     Output = joblib.Parallel(n_jobs=n_jobs)(joblib.delayed(
         add_video_chunks
@@ -95,28 +97,55 @@ def add_video_chunks_parallel(chunks, *args, n_jobs=1, **kwargs):
 
 
 
-def build_new_name(video_path, chunk, extension=".mp4"):
+def build_new_key(video_path, chunk, identity=1):
     flyhostel = video_path.split(os.path.sep)[-6]
     X = video_path.split(os.path.sep)[-5]
     date_time = video_path.split(os.path.sep)[-4]
     chunk_padded = str(chunk).zfill(6)
-    return "_".join([flyhostel, X, date_time, chunk_padded]) + extension
+    identity_padded = str(identity).zfill(3)
+    return "_".join([flyhostel, X, date_time, chunk_padded, identity_padded])
 
 
-def add_video_chunks(project_path, videos_dir, data_dir, chunks, **kwargs):
+
+def write_rois_file(key_folder, identity, width, height):
+
+    identifier = identity-1
+    rois_txt = os.path.join(key_folder, ROIS_FILENAME)
+    y = 0
+
+    with open(rois_txt, "w", encoding="utf8") as filehandle:
+        x = width * identifier
+        filehandle.write(f"{identity} {x} {y} {width} {height}\n")
+
+    return rois_txt
+
+def add_video_chunks(cfg, project_path, videos_dir, data_dir, chunks, width, height, **kwargs):
+
+    number_of_animals = int(re.search("/([0-9])X/", videos_dir).group(1))
+    y=0
+    EXTENSION=".mp4"
+
 
     for chunk in chunks:
+        for identity in range(1, number_of_animals+1):
 
-        video_path = os.path.join(videos_dir, str(chunk).zfill(6) + ".mp4")
-        new_name=build_new_name(video_path, chunk)
-        try:
-            add_video(project_path, video_path, data_dir, new_name, **kwargs)
-        except Exception as error:
-            print(f"Could not add video for chunk {chunk}")
-            print(error)
+            print(chunk, identity)
+
+            video_path = os.path.join(videos_dir, str(chunk).zfill(6) + EXTENSION)
+            key=build_new_key(video_path, chunk, identity)
+            key_folder = os.path.join(project_path, data_dir, key)
+            os.makedirs(key_folder, exist_ok=True)
+            rois_txt=write_rois_file(key_folder, identity, width, height)
+            assert os.path.exists(rois_txt)
+
+            try:
+                add_video(cfg, project_path, video_path, data_dir, key + EXTENSION, identity, **kwargs)
+            except Exception as error:
+                print(f"Could not add video for chunk {chunk}")
+                print(error)
 
 
-def add_video(project_path, video_path, data_dir, new_name, mode="copy", stride=10, overwrite=False, width=200, height=200):
+def add_video(cfg, project_path, video_path, data_dir, new_name, identity=1, mode="copy", stride=10, overwrite=False):
     """
     Add a single fly video to the deepethogram project DATA folder for analysis
 
@@ -125,20 +154,16 @@ def add_video(project_path, video_path, data_dir, new_name, mode="copy", stride=
         project_path (str): Path to folder containing project_config.yaml
         video_path (str): Path to input video
         data_dir (str): Name of folder in deepethogram project where videos should be linked to
-        new_name (str): New name of video (without extension)
+        new_name (str): New name of video (with extension)
+        identity (int): ROI of the video
         mode (str): One of copy, move or symlink, describing how the video is added to the deepethogram project
         stride (int): Every stride number of frames will be used to compute the stats
     """
-
-    with open(os.path.join(project_path, "project_config.yaml"), "r") as filehandle:
-        cfg=yaml.load(filehandle, yaml.SafeLoader)
-
-
     if not overwrite and os.path.exists(video_path) and os.path.exists(os.path.join(os.path.dirname(video_path), "stats.yaml")):
        print(f"{video_path} already symlinked")
        return
 
-    cfg["project"]["data_path"] = os.path.join(project_path, data_dir)
+    # cfg["project"]["data_path"] = os.path.join(project_path, data_dir)
 
 
     files = os.listdir(project_path)
@@ -154,27 +179,19 @@ def add_video(project_path, video_path, data_dir, new_name, mode="copy", stride=
     else:
         new_name = os.path.basename(video_path)
 
-    data_dir = os.path.join(os.path.dirname(cfg["project"]["data_path"]), data_dir)
-    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path, data_path=data_dir, mode=mode, basename=new_name, stride=stride)
+    data_dir = os.path.join(project_path, data_dir)
+    transferred_file = add_video_to_project(project=cfg, path_to_video=video_path, data_path=data_dir, mode=mode, basename=new_name, identity=identity, stride=stride)
     print(f"DONE {transferred_file} -> {data_dir} (stride = {stride})")
-    if mode == "symlink":
-        dest_file = add_label_to_project(project=cfg, path_to_video=video_path, new_name=new_name, labels_folder=data_dir)
-        if dest_file is not None: print(f"Linked {dest_file}")
+    # if mode == "symlink":
+    #     dest_file = add_label_to_project(project=cfg, path_to_video=video_path, new_name=new_name, labels_folder=data_dir)
+    #     if dest_file is not None: print(f"Linked {dest_file}")
 
-    number_of_animals=int(re.search("/([0-9])X/", video_path).group(1))
-    output_folder = os.path.dirname(transferred_file)
-    rois_txt = os.path.join(output_folder, "rois.txt")
-    y = 0
-    with open(rois_txt, "w", encoding="utf8") as filehandle:
-        for identifier in range(number_of_animals):
-            x = width * identifier
-            filehandle.write(f"{identifier} {x} {y} {width} {height}")
-            key, ext = os.path.splitext(dest_file)
-            dest_file_single_roi=f"{key}__{identifier}{ext}"
-            os.symlink(dest_file, dest_file_single_roi)
 
 
 def add_label_to_project(project, path_to_video, new_name, labels_folder):
+    """
+
+    """
     data_path = project["project"]["data_path"]
 
     pattern = os.path.join(labels_folder, os.path.splitext(new_name)[0], "*_labels.csv")

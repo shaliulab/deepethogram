@@ -2,6 +2,8 @@ import logging
 import os
 import sys
 from typing import Union
+import shutil
+import warnings
 
 # import hydra
 import numpy as np
@@ -93,19 +95,30 @@ class StatsRecorder:
         return 'mean: {} std: {} n: {}'.format(self.mean, self.std, self.nobservations)
 
 
-def get_video_statistics(videofile, stride, isColor=True):
+def get_video_statistics(videofile, stride, **kwargs):
     image_stats = StatsRecorder()
-    with deepethogram.file_io.VideoReader(videofile) as reader:
+
+    n_frames = 0
+    with deepethogram.file_io.VideoReader(videofile, **kwargs) as reader:
         log.debug('N frames: {}'.format(len(reader)))
-        for i in tqdm(range(0, len(reader), stride)):
+        #for i in tqdm(range(0, len(reader), stride)):
+        print(f"Processing {videofile} with stride {stride}")
+        for i in range(0, len(reader), stride):
             try:
                 image = reader[i]
             except Exception as e:
-                log.warning('Error reading frame {} from video {}'.format(i, videofile))
+                log.warning('Error reading frame {} from video {}'.format(i, videofile), stacklevel=2)
                 continue
             image = image.astype(float) / 255
             image = image.transpose(2, 1, 0).reshape(3, -1).transpose(1, 0)
             image_stats.update(image)
+            n_frames+=1
+
+    if n_frames==0:
+        warnings.warn(f"Could not process {videofile}")
+        return {}
+    else:
+        print(f"Processed # frames {n_frames} from {videofile}")
 
     log.info('final stats: {}'.format(image_stats))
 
@@ -143,7 +156,10 @@ def zscore_video(videofile: Union[str, os.PathLike], project_config: dict, strid
     # transforms = get_transforms_from_config(config)
     # xform = transforms['train']
     log.info('zscoring file: {}'.format(videofile))
-    imdata = get_video_statistics(videofile, stride, **kwargs)
+    imdata = get_video_statistics(videofile, stride=stride, **kwargs)
+    if not imdata:
+        shutil.rmtree(os.path.dirname(videofile))
+        return
 
     fname = os.path.join(os.path.dirname(videofile), 'stats.yaml')
     dictionary = {}
@@ -162,13 +178,13 @@ def update_project_with_normalization(norm_dict: dict, project_config: dict):
     if 'normalization' not in project_config['augs'].keys():
         raise ValueError('Must have project_config/augs/normalization field: {}'.format(project_config))
     old_rgb = project_config['augs']['normalization']
-    
-    if not project_config["project"]["isColor"]:
-    
-        old_rgb["augs"]["mean"]=old_rgb["augs"]["mean"][0]
-        old_rgb["augs"]["std"]=old_rgb["augs"]["std"][0]
-        
-    
+
+    #if not project_config["project"]["isColor"]:
+    #
+    #    old_rgb["augs"]["mean"]=old_rgb["augs"]["mean"][0]
+    #    old_rgb["augs"]["std"]=old_rgb["augs"]["std"][0]
+
+
     if old_rgb is not None and old_rgb['N'] is not None and old_rgb['mean'] is not None:
         old_mean_total = old_rgb['N'] * np.array(old_rgb['mean'])
         old_std_total = old_rgb['N'] * np.array(old_rgb['std'])

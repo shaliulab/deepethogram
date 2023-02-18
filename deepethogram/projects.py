@@ -87,7 +87,7 @@ def initialize_project(directory: Union[str, os.PathLike],
     return project_config
 
 
-def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], mode: str = 'copy', basename: str = None) -> str:
+def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], data_path: str = None, mode: str = 'copy', basename: str = None, identity: int = 1, stride: int = 10) -> str:
     """
     Adds a video file to a DEG project.
 
@@ -127,7 +127,11 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
     # project = utils.load_yaml(os.path.join(project_directory, 'project_config.yaml'))
     # project = convert_config_paths_to_absolute(project)
     log.debug('configuration file when adding video: {}'.format(project))
-    datadir = os.path.join(project['project']['path'], project['project']['data_path'])
+    if data_path is None:
+        datadir = os.path.join(project['project']['path'], project['project']['data_path'])
+    else:
+        datadir = data_path
+
     assert os.path.isdir(datadir), 'data path not found: {}'.format(datadir)
 
     # for speed during training, videos can be saved as directories of PNG / JPEG files.
@@ -141,10 +145,13 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
     vidname = os.path.splitext(basename)[0]
 
     video_directory = os.path.join(datadir, vidname)
-    if os.path.isdir(video_directory):
-        raise ValueError('Directory {} already exists in your data dir! ' \
-                         'Please rename the video to a unique name'.format(vidname))
-    os.makedirs(video_directory)
+    # if os.path.isdir(video_directory) and mode == "symlink":
+    #      print(f"Remaking {video_directory}")
+    #      shutil.rmtree(video_directory)
+    #    raise ValueError('Directory {} already exists in your data dir! ' \
+    #                     'Please rename the video to a unique name'.format(vidname))
+
+    # os.makedirs(video_directory)
     new_path = os.path.join(video_directory, basename)
     if mode == 'copy':
         if video_is_directory:
@@ -152,7 +159,10 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
         else:
             shutil.copy(path_to_video, new_path)
     elif mode == 'symlink':
-        os.symlink(path_to_video, new_path)
+        if os.path.exists(new_path):
+            pass
+        else:
+            os.symlink(path_to_video, new_path)
     elif mode == 'move':
         shutil.move(path_to_video, new_path)
     else:
@@ -161,7 +171,7 @@ def add_video_to_project(project: dict, path_to_video: Union[str, os.PathLike], 
     record = parse_subdir(video_directory)
     log.debug('New record after adding: {}'.format(record))
     utils.save_dict_to_yaml(record, os.path.join(video_directory, 'record.yaml'))
-    zscore_video(os.path.join(video_directory, basename), project, isColor=project["project"]["isColor"])
+    zscore_video(os.path.join(video_directory, basename), project, idx=identity, stride=stride)
     return new_path
 
 
@@ -257,8 +267,8 @@ def add_behavior_to_project(config_file: Union[str, os.PathLike], behavior_name:
     Adds this behavior to the class_names field of your project configuration.
     Adds -1 column in all labelfiles in current project.
     Saves the altered project_config to disk.
-    Removes any file with previous outputs / latents. 
-    
+    Removes any file with previous outputs / latents.
+
     Parameters
     ----------
     config_file: str, PathLike
@@ -881,8 +891,8 @@ def sort_runs_by_date(runs: list) -> list:
 
 
 def get_weightfiles_from_rundir(rundir: Union[os.PathLike, str]) -> dict:
-    """from a run directory, finds a dictionary of all the model weights. 
-    
+    """from a run directory, finds a dictionary of all the model weights.
+
     Can be either .pt or .ckpt. Can be either the "last" model or the "best" model, according to one's key metric
 
     Parameters
@@ -1192,7 +1202,7 @@ def load_config(path_to_config: Union[str, os.PathLike]) -> dict:
 
 def load_default(conf_name: str) -> dict:
     """ Loads default configs from deepethogram install path
-    DEPRECATED. 
+    DEPRECATED.
     TODO: replace with configuration.load_config_by_name
     """
     log.debug('project loc for loading default: {}'.format(projects_file_directory))
@@ -1204,8 +1214,8 @@ def load_default(conf_name: str) -> dict:
 
 
 def convert_all_videos(config_file: Union[str, os.PathLike], movie_format='hdf5', **kwargs) -> None:
-    """Converts all videos in a project from one filetype to another. 
-    
+    """Converts all videos in a project from one filetype to another.
+
     Note: If using movie_format other than 'directory' or 'hdf5', will re-compress images!
 
     Parameters
@@ -1240,7 +1250,7 @@ def get_config_file_from_path(path: Union[str, os.PathLike]) -> str:
 
 def fix_config_paths(cfg, path_to_config: Union[str, os.PathLike]):
     """Fixes the path to the project and config file in the configuration itself.
-    
+
     This situation could occur if one moved an existing project to another computer or directory
 
     Parameters
@@ -1252,7 +1262,7 @@ def fix_config_paths(cfg, path_to_config: Union[str, os.PathLike]):
 
     Returns
     -------
-    cfg: DictConfig 
+    cfg: DictConfig
         configuration with fixed paths
     """
     error = False
@@ -1272,12 +1282,12 @@ def fix_config_paths(cfg, path_to_config: Union[str, os.PathLike]):
 
 def get_config_from_path(project_path: Union[str, os.PathLike]):
     """gets a project configuration from a project path
-    
+
     Finds the file; loads it; and fixes any relevant config paths
 
     Parameters
     ----------
-    project_path : str, os.PathLike 
+    project_path : str, os.PathLike
         path to a deepethogram project
 
     Returns
@@ -1385,7 +1395,7 @@ def configure_run_directory(cfg: DictConfig) -> str:
 
     Name: date-time_model-type_run-type_notes
     e.g. 20210311_011800_feature_extractor_train_testing_dropout
-    
+
     Parameters
     ----------
     cfg : DictConfig
@@ -1414,7 +1424,7 @@ def configure_run_directory(cfg: DictConfig) -> str:
 def configure_logging(cfg: DictConfig = None) -> None:
     """Sets up python logging to use a specific format, and also save to disk
 
-    If no config is passed, simply log to the command line. 
+    If no config is passed, simply log to the command line.
 
     Parameters
     ----------
