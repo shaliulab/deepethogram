@@ -454,7 +454,7 @@ def extract(rgbs: list,
 
 
 def feature_extractor_inference(cfg: DictConfig):
-    """Runs inference on the feature extractor from an OmegaConf configuration. 
+    """Runs inference on the feature extractor from an OmegaConf configuration.
 
     Parameters
     ----------

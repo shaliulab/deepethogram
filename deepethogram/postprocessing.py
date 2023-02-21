@@ -256,7 +256,7 @@ class MinBoutLengthPerBehaviorPostprocessor(Postprocessor):
     """ Postprocessor that removes bouts of length less than or equal to bout_length """
     def __init__(self, thresholds: np.ndarray, bout_lengths: list, **kwargs):
         super().__init__(thresholds, **kwargs)
-        assert len(thresholds) == len(bout_lengths)
+        assert len(thresholds) == len(bout_lengths), f"{len(thresholds)} != {len(bout_lengths)}"
         self.bout_lengths = bout_lengths
 
     def process(self, probabilities: np.ndarray) -> np.ndarray:
@@ -317,6 +317,7 @@ def get_postprocessor_from_cfg(cfg: DictConfig, thresholds: np.ndarray) -> Type[
     elif cfg.postprocessor.type == 'min_bout':
         return MinBoutLengthPostprocessor(thresholds, cfg.postprocessor.min_bout_length)
     elif cfg.postprocessor.type == 'min_bout_per_behavior':
+
         if not os.path.isdir(cfg.project.data_path):
             cfg = projects.convert_config_paths_to_absolute(cfg)
         assert os.path.isdir(cfg.project.data_path)

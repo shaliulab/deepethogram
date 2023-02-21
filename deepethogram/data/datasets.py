@@ -32,13 +32,13 @@ log = logging.getLogger(__name__)
 
 # https://pytorch.org/docs/stable/data.html
 class VideoIterable(data.IterableDataset):
-    """Highly optimized Dataset for running inference on videos. 
-    
-    Features: 
+    """Highly optimized Dataset for running inference on videos.
+
+    Features:
         - Data is only read sequentially
         - Each frame is only read once
         - The input video is divided into NUM_WORKERS segments. Each worker reads its segment in parallel
-        - Each clip is read with stride = 1. If sequence_length==3, the first clips would be frames [0, 1, 2], 
+        - Each clip is read with stride = 1. If sequence_length==3, the first clips would be frames [0, 1, 2],
             [1, 2, 3], [2, 3, 4], ... etc
     """
 
@@ -598,11 +598,11 @@ class SingleSequenceDataset(data.Dataset):
 
 
 class KeypointDataset(SingleSequenceDataset):
-    """Dataset for reading keypoints (e.g. from deeplabcut) and performing basis function expansion. 
-    
+    """Dataset for reading keypoints (e.g. from deeplabcut) and performing basis function expansion.
+
     Currently, only an edited variant of Sturman et al.'s basis expansion is implemented
-    Sturman, O., von Ziegler, L., Schläppi, C. et al. Deep learning-based behavioral analysis reaches human 
-        accuracy and is capable of outperforming commercial solutions. Neuropsychopharmacol. 45, 1942–1952 (2020). 
+    Sturman, O., von Ziegler, L., Schläppi, C. et al. Deep learning-based behavioral analysis reaches human
+        accuracy and is capable of outperforming commercial solutions. Neuropsychopharmacol. 45, 1942–1952 (2020).
         https://doi.org/10.1038/s41386-020-0776-y
     """
 
@@ -632,8 +632,8 @@ class KeypointDataset(SingleSequenceDataset):
         Raises
         ------
         NotImplementedError
-            For basis function expansion. Currently, only 'sturman' is implemented: 
-            
+            For basis function expansion. Currently, only 'sturman' is implemented:
+
         """
         if expansion_method == 'sturman':
             self.expansion_func = expand_features_sturman
@@ -684,7 +684,7 @@ class KeypointDataset(SingleSequenceDataset):
 
 
 class FeatureVectorDataset(SingleSequenceDataset):
-    """Reads image and flow feature vectors from HDF5 files. 
+    """Reads image and flow feature vectors from HDF5 files.
     """
 
     def __init__(self,
