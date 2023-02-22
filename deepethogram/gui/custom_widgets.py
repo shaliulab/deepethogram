@@ -141,6 +141,8 @@ class VideoFrame(QtWidgets.QGraphicsView):
             value = self.vid.nframes - 1
 
         self.frame = self.vid[value]
+        if self.vid.idx is not None:
+            self.frame=self.frame.copy(order='C')
 
         # the frame in the videoreader is the position of the reader. If you've read frame 0, the current reader
         # position is 1. This makes cv2.CAP_PROP_POS_FRAMES match vid.fnum. However, we want to keep track of our
