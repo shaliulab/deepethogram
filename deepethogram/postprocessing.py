@@ -224,7 +224,7 @@ class Postprocessor:
         """ Applies thresholds to binarize inputs """
         assert len(probabilities.shape) == 2, 'probabilities must be a TxK matrix: not {}'.format(probabilities.shape)
         assert probabilities.shape[1] == self.thresholds.shape[0]
-        predictions = (probabilities > np.max(np.hstack([[0.1,]*len(thresholds), thresholds]), axis=1)).astype(int)
+        predictions = (probabilities > np.max(np.stack([[0.1,]*len(self.thresholds), self.thresholds], axis=1), axis=1)).astype(int)
         return predictions
 
     def process(self, probabilities: np.ndarray) -> np.ndarray:
