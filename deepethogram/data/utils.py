@@ -26,7 +26,7 @@ def purge_unlabeled_videos(video_list: list, label_list: list) -> Tuple[list, li
     valid_videos = []
     valid_labels = []
 
-    warning_string = '''Labelfile {} associated with video {} has unlabeled frames! 
+    warning_string = '''Labelfile {} associated with video {} has unlabeled frames!
         Please finish labeling or click the Finalize Labels button on the GUI.'''
 
     for i in range(len(label_list)):
@@ -43,7 +43,7 @@ def purge_unlabeled_videos(video_list: list, label_list: list) -> Tuple[list, li
 def purge_unlabeled_elements_from_records(records: dict) -> dict:
     valid_records = {}
 
-    warning_message = '''labelfile {} has unlabeled frames! 
+    warning_message = '''labelfile {} has unlabeled frames!
         Please finish labeling or click the Finalize Labels button on the GUI.
         Associated files: {}'''
 
@@ -55,9 +55,11 @@ def purge_unlabeled_elements_from_records(records: dict) -> dict:
                 'Associated files: {}'.format(record))
             continue
         label = read_labels(labelfile)
-        has_unlabeled_frames = np.any(label == -1)
+        has_unlabeled_frames = np.any(label == -1) # matrix number_of_frames x number_of_behaviors
         if has_unlabeled_frames:
             log.warning(warning_message.format(animal, record))
+            number_of_unlabeled_frames = np.sum(np.any(label == -1, axis=1))
+            log.warning("There are %d frames with a label missing", number_of_unlabeled_frames)
         else:
             valid_records[animal] = record
     return valid_records
