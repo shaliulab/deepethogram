@@ -26,7 +26,7 @@ def purge_unlabeled_videos(video_list: list, label_list: list) -> Tuple[list, li
     valid_videos = []
     valid_labels = []
 
-    warning_string = '''Labelfile {} associated with video {} has unlabeled frames! 
+    warning_string = '''Labelfile {} associated with video {} has unlabeled frames!
         Please finish labeling or click the Finalize Labels button on the GUI.'''
 
     for i in range(len(label_list)):
@@ -43,7 +43,7 @@ def purge_unlabeled_videos(video_list: list, label_list: list) -> Tuple[list, li
 def purge_unlabeled_elements_from_records(records: dict) -> dict:
     valid_records = {}
 
-    warning_message = '''labelfile {} has unlabeled frames! 
+    warning_message = '''labelfile {} has unlabeled frames!
         Please finish labeling or click the Finalize Labels button on the GUI.
         Associated files: {}'''
 

@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 
 # @profile
 def feature_extractor_train(cfg: DictConfig) -> nn.Module:
-    """Trains feature extractor models from a configuration. 
+    """Trains feature extractor models from a configuration.
 
     Parameters
     ----------
