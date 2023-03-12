@@ -18,9 +18,9 @@ def remove_low_thresholds(thresholds: np.ndarray,
                           f1s: np.ndarray = None,
                           minimum_f1: float = 0.05) -> np.ndarray:
     """ Replaces thresholds below a certain value with 0.5
-    
-    If the model completely fails, the optimum threshold might be something erreoneous, such as 
-    0.00001. This makes all predictions==1. 
+
+    If the model completely fails, the optimum threshold might be something erreoneous, such as
+    0.00001. This makes all predictions==1.
 
     Parameters
     ----------
@@ -224,7 +224,7 @@ class Postprocessor:
         """ Applies thresholds to binarize inputs """
         assert len(probabilities.shape) == 2, 'probabilities must be a TxK matrix: not {}'.format(probabilities.shape)
         assert probabilities.shape[1] == self.thresholds.shape[0]
-        predictions = (probabilities > self.thresholds).astype(int)
+        predictions = (probabilities > np.max(np.hstack([[0.1,]*len(thresholds), thresholds]), axis=1)).astype(int)
         return predictions
 
     def process(self, probabilities: np.ndarray) -> np.ndarray:
@@ -351,7 +351,7 @@ def postprocess_and_save(cfg: DictConfig) -> None:
     ----------
     cfg : DictConfig
         a project configuration. Must have the `sequence` and `postprocessing` sections
-        
+
     Goes through each "outputfile" in the project, loads the probabilities, postprocesses them, and saves to disk
     with the name `base + _predictions.csv`.
     """
