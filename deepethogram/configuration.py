@@ -130,6 +130,9 @@ def make_config(project_path: Union[str, os.PathLike],
     # config_path = os.path.join(os.path.dirname(deepethogram.__file__), 'conf')
 
     user_cfg = projects.get_config_from_path(project_path)
+    entries=['data_path', 'model_path', 'path', 'pretrained_path']
+    for entry in entries:
+        user_cfg["project"][entry]=os.path.join(project_path, user_cfg["project"][entry].split(os.path.basename(project_path))[1].lstrip(os.path.sep))
 
     # order of operations: first, defaults specified in config_list
     # then, if preset is specified in user config or at the command line, load those preset values
