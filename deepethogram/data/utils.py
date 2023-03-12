@@ -55,9 +55,11 @@ def purge_unlabeled_elements_from_records(records: dict) -> dict:
                 'Associated files: {}'.format(record))
             continue
         label = read_labels(labelfile)
-        has_unlabeled_frames = np.any(label == -1)
+        has_unlabeled_frames = np.any(label == -1) # matrix number_of_frames x number_of_behaviors
         if has_unlabeled_frames:
             log.warning(warning_message.format(animal, record))
+            number_of_unlabeled_frames = np.sum(np.any(label == -1, axis=1))
+            log.warning("There are %d frames with a label missing", number_of_unlabeled_frames)
         else:
             valid_records[animal] = record
     return valid_records
