@@ -15,18 +15,18 @@ def config_string_to_path(config_path: Union[str, os.PathLike], string: str) -> 
     config_path : Union[str, os.PathLike]
         absolute path to deepethogram/deepethogram/conf directory
     string : str
-        name of configuration. 
+        name of configuration.
 
     Returns
     -------
     str
         Absolute path to configuration default file
-        
+
     Examples
     --------
     >>> config_string_to_path('path/to/deepethogram/deepethogram/conf', 'tune/feature_extractor')
     'path/to/deepethogram/deepethogram/conf/tune/feature_extractor.yaml'
-        
+
     """
     fullpath = os.path.join(config_path, *string.split('/')) + '.yaml'
     assert os.path.isfile(fullpath), f'{fullpath} not found'
@@ -47,7 +47,7 @@ def load_config_by_name(string: str, config_path: Union[str, os.PathLike] = None
     -------
     DictConfig
         Configuration loaded from YAML file
-        
+
     Examples
     --------
     >>> load_config_by_name('model/feature_extractor')
@@ -86,37 +86,37 @@ def make_config(project_path: Union[str, os.PathLike],
                 use_command_line: bool = False,
                 preset: str = None,
                 debug: bool = False) -> DictConfig:
-    """Makes a configuration for model training or inference. 
-    
-    A list of default configurations are composed into one single cfg. From the project path, the project configuration
-    is found and loaded. If a preset is specified either in the config_list or in the project config, load "preset" 
-    parameters. 
+    """Makes a configuration for model training or inference.
 
-    Order of composition: 
+    A list of default configurations are composed into one single cfg. From the project path, the project configuration
+    is found and loaded. If a preset is specified either in the config_list or in the project config, load "preset"
+    parameters.
+
+    Order of composition:
     1. Defaults
     2. Preset
     3. Project configuration
     4. Command line
-    
-    This means if you specify the value of a parameter (say, dropout probability) in multiple places, the last one 
+
+    This means if you specify the value of a parameter (say, dropout probability) in multiple places, the last one
     (highest number in above list) will be chosen. This means we can specify a default dropout (0.25); for your project,
-    you can specify a new default in your project_config (e.g. 0.5). For an experiment, you can use the commmand line 
-    to set `feature_extractor.dropout_p=0.75`. If its in all 3 places, the command line "wins" and the actual dropout is 
-    0.75. 
+    you can specify a new default in your project_config (e.g. 0.5). For an experiment, you can use the commmand line
+    to set `feature_extractor.dropout_p=0.75`. If its in all 3 places, the command line "wins" and the actual dropout is
+    0.75.
 
     Parameters
     ----------
     project_path : Union[str, os.PathLike]
         Path to deepethogram project. Should contain: project_config.yaml, models directory, DATA directory
     config_list : list
-        List of string names of default configurations. Each of them is the name of a file or sub-file in the 
-        deepethogram/conf directory. 
+        List of string names of default configurations. Each of them is the name of a file or sub-file in the
+        deepethogram/conf directory.
     run_type : str
         Train, inference, or gui
     model : str
         feature_extractor, flow_generator, or sequence
     use_command_line : bool, optional
-        If True, command line arguments are parsed and composed into the 
+        If True, command line arguments are parsed and composed into the
     preset : str, optional
         One of deg_f, deg_m, deg_s, by default None
     debug : bool, optional
@@ -130,9 +130,20 @@ def make_config(project_path: Union[str, os.PathLike],
     # config_path = os.path.join(os.path.dirname(deepethogram.__file__), 'conf')
 
     user_cfg = projects.get_config_from_path(project_path)
-    entries=['data_path', 'model_path', 'path', 'pretrained_path']
-    for entry in entries:
-        user_cfg["project"][entry]=os.path.join(project_path, user_cfg["project"][entry].split(os.path.basename(project_path))[1].lstrip(os.path.sep))
+    entries={
+        "run": ["dir"],
+        "project": ['data_path', 'model_path', 'path', 'pretrained_path']
+    }
+    basename = os.path.basename(project_path)
+
+    for section in entries:
+        for entry in entries[section]:
+            if basename in user_cfg[section][entry]:
+                relative_path = user_cfg[section][entry].split(basename)[1].lstrip(os.path.sep)
+                user_cfg[section][entry]=os.path.join(project_path, relative_path)
+            else:
+                user_cfg[section][entry]=os.path.join(project_path, user_cfg[section])
+
 
     # order of operations: first, defaults specified in config_list
     # then, if preset is specified in user config or at the command line, load those preset values
