@@ -501,12 +501,23 @@ def feature_extractor_inference(cfg: DictConfig):
 
     # video files are found in your input list of directories using the records.yaml file that should be present
     # in each directory
+
     records = []
     for directory in directory_list:
         assert os.path.isdir(directory), 'Not a directory: {}'.format(directory)
         record = projects.get_record_from_subdir(directory)
         assert record['rgb'] is not None
-        records.append(record)
+        if cfg.train.status:
+            if record["label"] is not None:
+                records.append(record)
+        else:
+            records.append(record)
+
+
+    print(f"Inferring on records:")
+    for record in records:
+        print(record["key"])
+
     assert cfg.feature_extractor.n_flows + 1 == cfg.flow_generator.n_rgb, 'Flow generator inputs must be one greater ' \
                                                                           'than feature extractor num flows '
 

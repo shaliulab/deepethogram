@@ -39,7 +39,7 @@ def load_config_by_name(string: str, config_path: Union[str, os.PathLike] = None
     Parameters
     ----------
     string : str
-        Name of configuration. examples: 'train', 'zscore', 'tune/tune', 'model/feature_extractor'
+        Name of configuration. examples: '  in', 'zscore', 'tune/tune', 'model/feature_extractor'
     config_path : Union[str, os.PathLike], optional
         Path to deepethogram conf directory. If None, finds automatically, by default None
 
@@ -142,7 +142,7 @@ def make_config(project_path: Union[str, os.PathLike],
                 relative_path = user_cfg[section][entry].split(basename)[1].lstrip(os.path.sep)
                 user_cfg[section][entry]=os.path.join(project_path, relative_path)
             else:
-                user_cfg[section][entry]=os.path.join(project_path, user_cfg[section])
+                user_cfg[section][entry]=os.path.join(project_path, user_cfg[section][entry])
 
 
     # order of operations: first, defaults specified in config_list

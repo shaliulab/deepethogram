@@ -55,7 +55,7 @@ def infer(model: Type[nn.Module],
         Method for expanding keypoints into features, by default sturman
     stack_in_time: bool, optional
         If True, stacks sequences from T x K features -> T*K features, by default False
-        
+
     Returns
     -------
     logits: np.ndarray
@@ -282,8 +282,18 @@ def sequence_inference(cfg: DictConfig):
     for directory in directory_list:
         assert os.path.isdir(directory), 'Not a directory: {}'.format(directory)
         record = projects.get_record_from_subdir(directory)
-        assert record['output'] is not None
-        outputfiles.append(record['output'])
+        assert record['output'] is not None, record
+        if cfg.train.status:
+            if record["label"] is not None:
+                outputfiles.append(record['output'])
+        else:
+            outputfiles.append(record['output'])
+
+
+    print(f"Inferring on records:")
+    for record in records:
+        print(record["key"])
+
 
     model = build_model_from_cfg(cfg, 1024, len(cfg.project.class_names))
     log.info('model: {}'.format(model))

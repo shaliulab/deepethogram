@@ -369,9 +369,7 @@ def train_val_test_split(records: dict, split: Union[tuple, list, np.ndarray] = 
     # print(type(split.tolist()[0]))
     return outputs
 
-
-def do_all_classes_have_labels(records: dict, split_dict: dict) -> bool:
-    """ Helper function to determine if each split has at least one instance of every class """
+def count_labels_of_each_class(records:dict, split_dict: dict):
     labelfiles = []
 
     for split in ['train', 'val', 'test']:
@@ -381,6 +379,12 @@ def do_all_classes_have_labels(records: dict, split_dict: dict) -> bool:
                 labelfiles.append(records[f]['label'])
             # labelfiles += [records[i]['label'] for i in split_dict[split]]
     _, class_counts, _, _, _ = read_all_labels(labelfiles)
+    return class_counts
+
+def do_all_classes_have_labels(records: dict, split_dict: dict) -> bool:
+    """ Helper function to determine if each split has at least one instance of every class """
+
+    class_counts = count_labels_of_each_class(records, split_dict)
     return np.all(class_counts > 0)
 
 
@@ -560,3 +564,10 @@ def fix_label(labelfile, label: np.ndarray, multilabel: bool = True) -> np.ndarr
                 label[ind] = zeros
         assert count_multilabeled_frames(label) == 0
     return label
+
+
+
+def get_behaviors_list(project_path):
+    project_config = utils.load_yaml(os.path.join(project_path, 'project_config.yaml'))
+    behaviors=project_config['project']['class_names']
+    return behaviors
