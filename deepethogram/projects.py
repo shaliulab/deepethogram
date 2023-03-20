@@ -404,6 +404,7 @@ def find_labelfiles(root: Union[str, bytes, os.PathLike]) -> list:
     """
     files = get_subfiles(root, return_type='file')
     files = [i for i in files if 'label' in os.path.basename(i).lower() or 'score' in os.path.basename(i).lower()]
+    files = exclude_strings_from_filelist(files, [".dvc"])
     return files
 
 
@@ -419,7 +420,7 @@ def find_rgbfiles(root: Union[str, bytes, os.PathLike]) -> list:
     files = get_subfiles(root, return_type='any')
     endings = [os.path.splitext(i)[1] for i in files]
     valid_endings = ['.avi', '.mp4', '.h5', '.mov']
-    excluded = ['flow', 'label', 'output', 'score']
+    excluded = ['flow', 'label', 'output', 'score', "predictions", ".dvc"]
     movies = [i for i in files if os.path.splitext(i)[1].lower() in valid_endings]
     movies = exclude_strings_from_filelist(movies, excluded)
 
@@ -446,6 +447,9 @@ def find_flowfiles(root: Union[str, bytes, os.PathLike]) -> list:
     framedirs = [
         i for i in get_subfiles(root, return_type='directory') if 'frame' in i and 'flow' in os.path.basename(i)
     ]
+    movies = exclude_strings_from_filelist(movies, [".dvc"])
+    framedirs = exclude_strings_from_filelist(framedirs, [".dvc"])
+
     return movies + framedirs
 
 
@@ -460,6 +464,7 @@ def find_outputfiles(root: Union[str, bytes, os.PathLike]) -> list:
     """
     files = get_subfiles(root, return_type='file')
     files = [i for i in files if 'output' in os.path.basename(i).lower() and os.path.splitext(i)[1].lower() == '.h5']
+    files = exclude_strings_from_filelist(files, [".dvc"])
     return files
 
 
