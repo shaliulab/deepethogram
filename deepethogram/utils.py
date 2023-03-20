@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Container
+import os.path
 import logging
-import os
 import pkgutil
 from collections import OrderedDict
 from inspect import isfunction
@@ -851,3 +851,18 @@ def get_run_files_from_weights(weightfile: Union[str, os.PathLike], metrics_pref
         assert os.path.isfile(metrics_file), 'no associated metrics file for weights! {}'.format(weightfile)
 
     return dict(config_file=loaded_config_file, metrics_file=metrics_file)
+
+def outputs_to_predictions(outputs_file, predictions_file, datasets=("P", "thresholds", "class_names")):
+    """
+    Copy from an outputs_file only the information needed to reproduce the prediction
+    """
+
+    assert outputs_file != predictions_file
+
+    with h5py.File(outputs_file, "r") as input_file:
+        with h5py.File(predictions_file, "w") as output_file:
+            models = input_file.keys()
+            for model in models:
+                model_group = output_file.create_group(model)
+                for dataset in datasets:
+                    model_group.create_dataset(dataset, data=input_file[model][dataset][:])

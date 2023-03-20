@@ -1,7 +1,7 @@
 import glob
 import logging
 import multiprocessing as mp
-import os
+import os.path
 import random
 import warnings
 from typing import Tuple, Union
@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from vidio import VideoReader
+import joblib
 
 from deepethogram import utils
 # from deepethogram.dataloaders import log
@@ -571,3 +572,50 @@ def get_behaviors_list(project_path):
     project_config = utils.load_yaml(os.path.join(project_path, 'project_config.yaml'))
     behaviors=project_config['project']['class_names']
     return behaviors
+
+
+def export_predictions_for_subdir(subdir):
+
+    record=utils.load_yaml(os.path.join(subdir, "record.yaml"))
+
+    outputs_file = record["output"]["default"]
+    if not outputs_file:
+        outputs_file = os.path.basename(subdir) + "_outputs.h5"
+
+    outputs_file = os.path.join(subdir, outputs_file)
+
+    if not os.path.exists(outputs_file):
+        return
+
+
+    predictions_file = os.path.join(
+        os.path.dirname(outputs_file),
+        outputs_file.replace("_outputs.h5", "_predictions.h5")
+    )
+    print(outputs_file)
+
+    utils.outputs_to_predictions(outputs_file, predictions_file)
+
+
+def is_subdir(subdir):
+    return os.path.isdir(subdir) and os.path.exists(os.path.join(subdir, "record.yaml"))
+
+
+def export_predictions(data_dir, n_jobs=1):
+
+    dirs = os.listdir(data_dir)
+    dirs=[os.path.join(data_dir, subdir) for subdir in dirs]
+    subdirs=[]
+
+    for subdir in dirs:
+        if is_subdir(subdir):
+            subdirs.append(subdir)
+
+    joblib.Parallel(n_jobs=n_jobs)(
+        joblib.delayed(
+            export_predictions_for_subdir
+        )(
+            subdir
+        )
+        for subdir in subdirs
+    )
