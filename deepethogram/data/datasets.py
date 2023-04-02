@@ -723,7 +723,7 @@ class FeatureVectorDataset(SingleSequenceDataset):
 
     def verify_dataset(self):
         with h5py.File(self.data_file, 'r') as f:
-            assert self.logit_key in f
+            assert self.logit_key in f, f"{self.data_file} contains {f.keys()}"
 
             if self.is_two_stream:
                 assert self.flow_key in f

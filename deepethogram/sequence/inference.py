@@ -287,8 +287,15 @@ def sequence_inference(cfg: DictConfig):
                 assert record['output'] is not None, record
                 outputfiles.append(record['output'])
         else:
-            assert record['output'] is not None, record
-            outputfiles.append(record['output'])
+            if cfg.inference.labels_only:
+                if not record["label"] is None:
+                    outputfiles.append(record["output"])
+
+                # if record["output"] is not None:
+                #     outputfiles.append(record['output'])
+            else:
+                assert record['output'] is not None, record
+                outputfiles.append(record['output'])
 
     model = build_model_from_cfg(cfg, 1024, len(cfg.project.class_names))
     log.info('model: {}'.format(model))

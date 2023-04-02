@@ -510,6 +510,9 @@ def feature_extractor_inference(cfg: DictConfig):
         if cfg.train.status:
             if record["label"] is not None:
                 records.append(record)
+        elif cfg.inference.labels_only:
+            if record["label"] is not None:
+                records.append(record)
         else:
             records.append(record)
 
