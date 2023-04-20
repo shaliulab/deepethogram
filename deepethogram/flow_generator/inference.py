@@ -36,7 +36,8 @@ def extract_movie(in_video,
                   polar: bool = True,
                   movie_format: str = 'ffmpeg',
                   batch_size=1,
-                  save_rgb_side_by_side=False) -> None:
+                  save_rgb_side_by_side=False,
+                  **kwargs) -> None:
 
     if polar:
         convert = partial(flow_to_rgb_polar, maxval=maxval)
@@ -55,7 +56,7 @@ def extract_movie(in_video,
     dataloader = DataLoader(dataset, num_workers=num_workers, batch_size=batch_size)
 
     # log.debug('model training mode: {}'.format(model.training))
-    with VideoWriter(out_video, movie_format) as vid:
+    with VideoWriter(out_video, movie_format, **kwargs) as vid:
         for i, batch in enumerate(tqdm(dataloader, leave=False)):
             if isinstance(batch, dict):
                 images = batch['images']
