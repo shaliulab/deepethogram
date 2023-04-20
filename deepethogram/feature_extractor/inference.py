@@ -503,10 +503,13 @@ def feature_extractor_inference(cfg: DictConfig):
     # in each directory
 
     records = []
+
     for directory in directory_list:
-        assert os.path.isdir(directory), 'Not a directory: {}'.format(directory)
+        assert os.path.isdir(directory), 'Not a directory: {}. cwd {}'.format(directory, os.getcwd())
         record = projects.get_record_from_subdir(directory)
-        assert record['rgb'] is not None
+        if record['rgb'] is None:
+            print(f"{record['key']} has no video")
+            continue
         if cfg.train.status:
             if record["label"] is not None:
                 records.append(record)
