@@ -138,7 +138,7 @@ def make_config(project_path: Union[str, os.PathLike],
 
     for section in entries:
         for entry in entries[section]:
-            if basename in user_cfg[section][entry]:
+            if basename in user_cfg[section][entry] and basename != "":
                 relative_path = user_cfg[section][entry].split(basename)[1].lstrip(os.path.sep)
                 user_cfg[section][entry]=os.path.join(project_path, relative_path)
             else:
