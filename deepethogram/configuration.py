@@ -175,6 +175,9 @@ def make_config(project_path: Union[str, os.PathLike],
     else:
         cfg = OmegaConf.merge(*cfgs, user_cfg)
 
+    if preset is not None:
+        cfg = OmegaConf.merge(cfg, load_config_by_name('preset/' + preset))
+
     cfg.run = {'type': run_type, 'model': model}
     return cfg
 
