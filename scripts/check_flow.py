@@ -173,8 +173,9 @@ def build_out_video_path(movie, movie_format):
 def get_parser():
 
     ap=argparse.ArgumentParser()
-    ap.add_argument("--movie")
+    ap.add_argument("--movie", required=True)
     ap.add_argument("--tag", default="latest")
+    ap.add_argument("--movie-format", default="ffmpeg")
     return ap
 
 def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
