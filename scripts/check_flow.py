@@ -47,7 +47,7 @@ from deepethogram.sequence.train import build_model_from_cfg as build_sequence
 cwd=os.getcwd()
 import shutil
 
-CUSTOM=True
+CUSTOM=False
 
 CONFIG_MAKERS={
     "feature_extractor": make_feature_extractor_inference_cfg,
@@ -177,7 +177,7 @@ def get_parser():
     ap.add_argument("--tag", default="latest")
     return ap
 
-def evaluate_flow_generator(movie, model="latest"):
+def evaluate_flow_generator(movie, model="latest", movie_format = 'ffmpeg'):
     cwd=os.getcwd()
     
     cfg=CONFIG_MAKERS["feature_extractor"](DEEPETHOGRAM_PROJECT_PATH)
@@ -189,7 +189,6 @@ def evaluate_flow_generator(movie, model="latest"):
     os.chdir(cwd)
 
 
-    movie_format = 'ffmpeg'
     maxval = 5
     polar = True
     save_rgb_side_by_side = True
