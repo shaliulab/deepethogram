@@ -1,3 +1,19 @@
+"""
+check_flow.py
+
+
+Dissect the first deepethogram step (flow generation) to understand what is it doing with the input videos
+The script generates a movie which contains the estimation of motion along x and y for each frame of the video
+using the information of the previous 11 frames (10 flows)
+
+Call like so:
+    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag latest # for the last available flow generator
+    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag /path/to/weights.ckpt
+
+It assumes DEEPETHOGRAM_PROJECT_PATH is an env variable
+If it's not you will get a KeyError. Just change the line to hardcode it or make it a variable in that case
+"""
+
 import os
 import logging
 import argparse
