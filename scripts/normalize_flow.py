@@ -1,3 +1,22 @@
+"""
+normalize_flow.py
+
+
+Dissect the first deepethogram step (flow generation) to understand what is it doing with the input videos
+The script generates a movie which refines the displayed flows in a movie by normalizing them so they are more clear
+to the human eye
+
+Call like so:
+    python normalize_flow.py --movie "/root/DATA/foo/foo_flows.mp4"
+
+Or from jupyter, like so:
+
+    from check_flow import normalize_movie
+    normalize_movie(movie="/root/DATA/foo/foo_flows.mp4")
+
+The movie is saved to "/root/DATA/foo/foo_flows_norm.mp4"
+"""
+
 import argparse
 import os.path
 
