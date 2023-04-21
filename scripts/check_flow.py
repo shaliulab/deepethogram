@@ -12,6 +12,8 @@ Call like so:
 
 It assumes DEEPETHOGRAM_PROJECT_PATH is an env variable
 If it's not you will get a KeyError. Just change the line to hardcode it or make it a variable in that case
+
+# set CUSTOM to False unless you are using github.com/shaliulab/deepethogram
 """
 
 import os
@@ -35,7 +37,6 @@ from deepethogram.sequence.train import build_model_from_cfg as build_sequence
 cwd=os.getcwd()
 import shutil
 
-# set to False unless you are using github.com/shaliulab/deepethogram
 CUSTOM=True
 
 CONFIG_MAKERS={
