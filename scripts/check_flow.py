@@ -10,10 +10,20 @@ Call like so:
     python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag latest # for the last available flow generator
     python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag /path/to/weights.ckpt
 
-It assumes DEEPETHOGRAM_PROJECT_PATH is an env variable
-If it's not you will get a KeyError. Just change the line to hardcode it or make it a variable in that case
 
-# set CUSTOM to False unless you are using github.com/shaliulab/deepethogram
+Please note
+1)  Assumes DEEPETHOGRAM_PROJECT_PATH is an env variable
+    If it's not you will get a KeyError. Just change the line to hardcode it
+
+    DEEPETHOGRAM_PROJECT_PATH="/some/path/in/your/system"
+
+    or make it a variable in that case, normally by writing in the .bashrc in Linux or MAC
+
+    # run in the terminal
+    echo 'export DEEPETHOGRAM_PROJECT_PATH="/some/path/in/your/system"' >> ~/.bashrc
+    source ~/.bashrc
+
+2) Set CUSTOM to False unless you are using github.com/shaliulab/deepethogram
 """
 
 import os
