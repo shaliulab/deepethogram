@@ -28,6 +28,7 @@ import cv2
 def get_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--flow", required=True)
+    return ap
 
 def main():
 
