@@ -76,3 +76,7 @@ def normalize_frame(frame):
     frame=np.uint8(frame)
     frame=np.hstack([frame, original])
     return frame
+
+
+if __name__ == "__main__":
+    main()
