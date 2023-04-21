@@ -7,9 +7,16 @@ The script generates a movie which contains the estimation of motion along x and
 using the information of the previous 11 frames (10 flows)
 
 Call like so:
-    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie----tag latest# for the last available flow generator
-    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag /path/to/weights.ckpt
+    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag latest# for the last available flow generator
+    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag /path/to/specific/weights.ckpt
 
+Or from jupyter, like so:
+
+    from check_flow import evaluate_flow_generator
+    evaluate_flow_generator(movie="/root/DATA/foo/foo.mp4", movie_format="opencv", tag="latest")
+    evaluate_flow_generator(movie="/root/DATA/foo/foo.mp4", movie_format="opencv", tag="/path/to/specific/weights.ckpt")
+
+The movie is saved to "/root/DATA/foo/foo_flows.mp4"
 
 Please note
 1)  Assumes DEEPETHOGRAM_PROJECT_PATH is an env variable
