@@ -177,13 +177,13 @@ def get_parser():
     ap.add_argument("--tag", default="latest")
     return ap
 
-def evaluate_flow_generator(movie, model="latest", movie_format = 'ffmpeg'):
+def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
     cwd=os.getcwd()
     
     cfg=CONFIG_MAKERS["feature_extractor"](DEEPETHOGRAM_PROJECT_PATH)
     cfg = projects.setup_run(cfg)
 
-    cfg, model, thresholds= load_model("flow_generator", model)
+    cfg, model, thresholds= load_model("flow_generator", tag)
     device = 'cuda:{}'.format(cfg.compute.gpu_id)
     model = model.to(device)
     os.chdir(cwd)
