@@ -1,5 +1,5 @@
 """
-check_flow.py
+check_models.py
 
 
 Dissect the first deepethogram step (flow generation) to understand what is it doing with the input videos
@@ -7,12 +7,12 @@ The script generates a movie which contains the estimation of motion along x and
 using the information of the previous 11 frames (10 flows)
 
 Call like so:
-    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag latest# for the last available flow generator
-    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag /path/to/specific/weights.ckpt
+    python check_models.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag latest# for the last available flow generator
+    python check_models.py --movie "/root/DATA/foo/foo.mp4" --movie-format opencv --tag /path/to/specific/weights.ckpt
 
 Or from jupyter, like so:
 
-    from check_flow import evaluate_flow_generator
+    from check_models import evaluate_flow_generator
     evaluate_flow_generator(movie="/root/DATA/foo/foo.mp4", movie_format="opencv", tag="latest")
     evaluate_flow_generator(movie="/root/DATA/foo/foo.mp4", movie_format="opencv", tag="/path/to/specific/weights.ckpt")
 
@@ -44,7 +44,8 @@ import yaml
 from deepethogram import utils, viz, projects
 
 
-DEEPETHOGRAM_PROJECT_PATH=os.environ.get("DEEPETHOGRAM_PROJECT_PATH", input("Enter DEEPETHOGRAM_PROJECT_PATH"))
+# DEEPETHOGRAM_PROJECT_PATH=os.environ.get("DEEPETHOGRAM_PROJECT_PATH", input("Enter DEEPETHOGRAM_PROJECT_PATH"))
+DEEPETHOGRAM_PROJECT_PATH="/Users/FlySleepLab Dropbox/Data/flyhostel_data/fiftyone/FlyBehaviors/"
 
 log = logging.getLogger(__name__)
 
@@ -131,12 +132,8 @@ def load_model(step, tag="latest"):
         )
         with open(config_yaml, "r") as filehandle:
             config = yaml.load(filehandle, yaml.SafeLoader)
-            config["flow_generator"]
-        import ipdb; ipdb.set_trace()
-
-
-
-    
+            cfg.flow_generator.n_rgb=config["flow_generator"]["n_rgb"]
+   
     weights = projects.get_weightfile_from_cfg(cfg, step)
 
     assert os.path.isfile(weights)
