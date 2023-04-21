@@ -16,11 +16,8 @@ from deepethogram.flow_generator.train import build_model_from_cfg as build_flow
 from deepethogram.flow_generator.inference import extract_movie
 from deepethogram.feature_extractor.train import build_model_from_cfg as build_feature_extractor
 from deepethogram.sequence.train import build_model_from_cfg as build_sequence
-
 cwd=os.getcwd()
 import shutil
-import matplotlib
-matplotlib.use('TkAgg')
 
 
 CONFIG_MAKERS={
