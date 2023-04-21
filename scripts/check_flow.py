@@ -7,7 +7,7 @@ The script generates a movie which contains the estimation of motion along x and
 using the information of the previous 11 frames (10 flows)
 
 Call like so:
-    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag latest # for the last available flow generator
+    python check_flow.py --movie "/root/DATA/foo/foo.mp4" --movie----tag latest# for the last available flow generator
     python check_flow.py --movie "/root/DATA/foo/foo.mp4" --tag /path/to/weights.ckpt
 
 
@@ -175,7 +175,7 @@ def get_parser():
     ap=argparse.ArgumentParser()
     ap.add_argument("--movie", required=True)
     ap.add_argument("--tag", default="latest")
-    ap.add_argument("--movie-format", default="ffmpeg")
+    ap.add_argument("--movie-format", dest="movie_format", default="ffmpeg")
     return ap
 
 def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
@@ -228,7 +228,7 @@ def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
 def main():
     ap = get_parser()
     args = ap.parse_args()
-    evaluate_flow_generator(args.movie, args.tag)
+    evaluate_flow_generator(args.movie, args.tag, args.movie_format)
 
 
 if __name__ == "__main__":
