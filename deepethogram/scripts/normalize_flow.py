@@ -28,6 +28,7 @@ import cv2
 def get_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--flow", required=True)
+    ap.add_argument("--shots", required=False, default=None)
     return ap
 
 def main():
@@ -35,10 +36,10 @@ def main():
     ap = get_parser()
     args=ap.parse_args()
     
-    normalize_movie(movie=args.flow)
+    normalize_movie(movie=args.flow, shots=args.shots)
 
 
-def normalize_movie(movie):
+def normalize_movie(movie, shots=None):
 
     cap=cv2.VideoCapture(movie)
     fps=int(cap.get(5))
@@ -48,6 +49,9 @@ def normalize_movie(movie):
     norm_flow = file + "_norm" + ext
 
     video_writer=cv2.VideoWriter(norm_flow, cv2.VideoWriter_fourcc(*"MJPG"), fps, (width, height), isColor=True)
+    if shots:
+        os.makedirs(shots)
+
     i=0
     pb=tqdm()
     # absolute_min=255
@@ -59,6 +63,8 @@ def normalize_movie(movie):
             break
         frame=normalize_frame(frame)
         video_writer.write(frame)
+        if shots:
+            cv2.imwrite(os.path.join(shots, f"{str(i).zfill(6)}.png"), frame)
         i+=1
         pb.update(1)
     video_writer.release()
