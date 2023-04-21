@@ -39,6 +39,7 @@ import argparse
 import h5py
 from omegaconf import DictConfig, OmegaConf
 import cv2
+import yaml
 
 from deepethogram import utils, viz, projects
 
@@ -124,7 +125,17 @@ def load_model(step, tag="latest"):
     setattr(getattr(cfg, step), "weights", tag)
     if step == "feature_extractor":
         setattr(getattr(cfg, "flow_generator"), "weights", "latest")
+        flow_generator_weights=projects.get_weightfile_from_cfg(cfg, "flow_generator")
+        config_yaml = os.path.join(
+            os.path.dirname(os.path.dirname(flow_generator_weights)), "config.yaml"
+        )
+        with open(config_yaml, "r") as filehandle:
+            config = yaml.load(filehandle, yaml.SafeLoader)
+            config["flow_generator"]
         import ipdb; ipdb.set_trace()
+
+
+
     
     weights = projects.get_weightfile_from_cfg(cfg, step)
 
