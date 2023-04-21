@@ -273,6 +273,7 @@ class MainWindow(QMainWindow):
         num_labeled = self.ui.labels.label.changed.sum()
 
         self.ui.nameLabel.setText(name)
+        self.ui.dynamic_label.setText(name)
         self.ui.nframesLabel.setText('{:,}'.format(nframes))
         self.ui.nlabeledLabel.setText('{:,}'.format(num_labeled))
         self.ui.nunlabeledLabel.setText('{:,}'.format(nframes - num_labeled))

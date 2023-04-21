@@ -7,8 +7,64 @@
 #      by: pyside2-uic  running on PySide2 5.13.2
 #
 # WARNING! All changes made in this file will be lost!
-
+import time
 from PySide2 import QtCore, QtGui, QtWidgets
+
+class HoverLabel(QtWidgets.QLabel):
+    def __init__(self, parent=None):
+        super(HoverLabel, self).__init__(parent)
+
+    def enterEvent(self, event):
+        # Update the text when the mouse enters the label
+        text = self.text()
+        self.setText(text + " ")
+        time.sleep(.15)
+        self.setText(text)
+
+    def leaveEvent(self, event):
+        # Restore the original text when the mouse leaves the label
+        self.setText(self.text())
+
+
+       
+class DynamicTextLabel(QtWidgets.QGraphicsView):
+    def __init__(self, parent=None):
+        super(DynamicTextLabel, self).__init__(parent)
+        self.original_text=""
+
+        # Set up the QGraphicsView
+        self.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.setRenderHint(QtGui.QPainter.TextAntialiasing)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setViewportUpdateMode(QtWidgets.QGraphicsView.FullViewportUpdate)
+        self.setFrameStyle(QtWidgets.QFrame.NoFrame)
+        self.setStyleSheet("background: transparent;")
+
+        # Set up the QGraphicsScene
+        self.scene = QtWidgets.QGraphicsScene(self)
+        self.setScene(self.scene)
+
+        # Add a QGraphicsTextItem to the scene
+        self.text_item = QtWidgets.QGraphicsTextItem()
+        self.scene.addItem(self.text_item)
+
+        # Set the initial text
+        self.text_item.setPlainText("Dynamic text on top!")
+
+    def setText(self, text):
+        # Update the text in the QGraphicsTextItem
+        self.text_item.setPlainText(text)
+
+    def enterEvent(self, event):
+        self.original_text = self.text_item.toPlainText()
+        # Update the text when the mouse enters the label
+        self.setText(self.original_text[-20:])
+
+    def leaveEvent(self, event):
+        # Restore the original text when the mouse leaves the label
+        self.setText(self.original_text)
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -33,9 +89,17 @@ class Ui_MainWindow(object):
         self.name_constant = QtWidgets.QLabel(self.videoBox)
         self.name_constant.setObjectName("name_constant")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.name_constant)
-        self.nameLabel = QtWidgets.QLabel(self.videoBox)
+        self.nameLabel = HoverLabel(self.videoBox)
         self.nameLabel.setText("")
         self.nameLabel.setObjectName("nameLabel")
+        
+
+        # Add a DynamicTextLabel on top of the widget
+        self.dynamic_label = DynamicTextLabel(MainWindow)
+        self.dynamic_label.setGeometry(self.nameLabel.geometry())
+        self.dynamic_label.setText("")
+        self.verticalLayout.addWidget(self.dynamic_label)
+        
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.nameLabel)
         self.label = QtWidgets.QLabel(self.videoBox)
         self.label.setObjectName("label")
