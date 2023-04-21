@@ -35,6 +35,8 @@ from deepethogram.sequence.train import build_model_from_cfg as build_sequence
 cwd=os.getcwd()
 import shutil
 
+# set to False unless you are using github.com/shaliulab/deepethogram
+CUSTOM=True
 
 CONFIG_MAKERS={
     "feature_extractor": make_feature_extractor_inference_cfg,
@@ -190,6 +192,11 @@ def evaluate_flow_generator(movie, model="latest"):
 
     # the master branch of deepethogram does not let you customise the fps of the output video
     # it is set to 30
+    if CUSTOM:
+        kwargs={"fps": fps}
+    else:
+        kwargs={}
+
     extract_movie(
         movie,
         out_video,
@@ -204,6 +211,7 @@ def evaluate_flow_generator(movie, model="latest"):
         polar=polar,
         movie_format=movie_format,
         save_rgb_side_by_side=save_rgb_side_by_side,
+        **kwargs
     )
 
 def main():
