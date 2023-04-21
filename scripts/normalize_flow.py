@@ -15,10 +15,10 @@ def main():
     ap = get_parser()
     args=ap.parse_args()
     
-    normalize_flow(movie=args.flow)
+    normalize_movie(movie=args.flow)
 
 
-def normalize_flow(movie):
+def normalize_movie(movie):
 
     cap=cv2.VideoCapture(movie)
     fps=int(cap.get(5))
