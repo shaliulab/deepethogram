@@ -42,7 +42,9 @@ import cv2
 
 from deepethogram import utils, viz, projects
 
-DEEPETHOGRAM_PROJECT_PATH=os.environ["DEEPETHOGRAM_PROJECT_PATH"]
+
+DEEPETHOGRAM_PROJECT_PATH=os.environ.get("DEEPETHOGRAM_PROJECT_PATH", input("Enter DEEPETHOGRAM_PROJECT_PATH"))
+
 log = logging.getLogger(__name__)
 
 from deepethogram.configuration import make_feature_extractor_inference_cfg, make_sequence_inference_cfg
@@ -109,10 +111,20 @@ def load_model(step, tag="latest"):
 
     cfg = projects.setup_run(cfg)
     
-    
+    if step != "flow_generator":
+        if 'sequence' not in cfg.keys() or 'latent_name' not in cfg.sequence.keys() or cfg.sequence.latent_name is None:
+            latent_name = cfg.feature_extractor.arch
+        else:
+            latent_name = cfg.sequence.latent_name
+        log.info('Latent name used in HDF5 file: {}'.format(latent_name))
+    else:
+        latent_name = None
+
+
     setattr(getattr(cfg, step), "weights", tag)
     if step == "feature_extractor":
         setattr(getattr(cfg, "flow_generator"), "weights", "latest")
+        import ipdb; ipdb.set_trace()
     
     weights = projects.get_weightfile_from_cfg(cfg, step)
 
@@ -126,6 +138,8 @@ def load_model(step, tag="latest"):
             "num_classes": len(cfg.project.class_names)
         })
     
+    cfg.feature_extractor.n_flows = cfg.flow_generator.n_rgb - 1
+
     
     model_components = BUILDERS[step](cfg, **kwargs)
     model = model_components
