@@ -58,7 +58,7 @@ from deepethogram.sequence.train import build_model_from_cfg as build_sequence
 cwd=os.getcwd()
 import shutil
 
-CUSTOM=False
+CUSTOM=True
 
 CONFIG_MAKERS={
     "feature_extractor": make_feature_extractor_inference_cfg,
@@ -94,7 +94,7 @@ def add_weights_to_cfg(step, cfg, weights):
     setattr(getattr(cfg, step), "weights", weights)
     return cfg
     
-def load_model(step, tag="latest"):
+def load_model(step, tag="latest", wd=None):
     """
     Load a DEG model
 
@@ -126,13 +126,15 @@ def load_model(step, tag="latest"):
     setattr(getattr(cfg, step), "weights", tag)
     if step == "feature_extractor":
         setattr(getattr(cfg, "flow_generator"), "weights", "latest")
-        flow_generator_weights=projects.get_weightfile_from_cfg(cfg, "flow_generator")
-        config_yaml = os.path.join(
-            os.path.dirname(os.path.dirname(flow_generator_weights)), "config.yaml"
-        )
-        with open(config_yaml, "r") as filehandle:
-            config = yaml.load(filehandle, yaml.SafeLoader)
-            cfg.flow_generator.n_rgb=config["flow_generator"]["n_rgb"]
+
+        # NOTE Uncomment this line when we support changing the default parameters of the flow generator
+        # flow_generator_weights=projects.get_weightfile_from_cfg(cfg, "flow_generator")
+        # config_yaml = os.path.join(
+        #     os.path.dirname(os.path.dirname(flow_generator_weights)), "config.yaml"
+        # )
+        # with open(config_yaml, "r") as filehandle:
+        #     config = yaml.load(filehandle, yaml.SafeLoader)
+        #     cfg.flow_generator.n_rgb=config["flow_generator"]["n_rgb"]
    
     weights = projects.get_weightfile_from_cfg(cfg, step)
 
@@ -175,6 +177,11 @@ def load_model(step, tag="latest"):
 
     else:
         thresholds = None
+
+
+    if wd:
+        os.chdir(wd)
+
     return cfg, model, thresholds
 
 
@@ -204,10 +211,11 @@ def get_parser():
     ap=argparse.ArgumentParser()
     ap.add_argument("--movie", required=True)
     ap.add_argument("--tag", default="latest")
+    ap.add_argument("--maxval", default=5.0, type=float, help="Max representable magniture of motion in flow generator output")
     ap.add_argument("--movie-format", dest="movie_format", default="ffmpeg")
     return ap
 
-def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
+def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg', maxval=5):
     cwd=os.getcwd()
     
     cfg=CONFIG_MAKERS["feature_extractor"](DEEPETHOGRAM_PROJECT_PATH)
@@ -218,8 +226,6 @@ def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
     model = model.to(device)
     os.chdir(cwd)
 
-
-    maxval = 5
     polar = True
     save_rgb_side_by_side = True
     cpu_transform = get_cpu_transforms(cfg.augs)['val']
@@ -257,7 +263,7 @@ def evaluate_flow_generator(movie, tag="latest", movie_format = 'ffmpeg'):
 def main():
     ap = get_parser()
     args = ap.parse_args()
-    evaluate_flow_generator(args.movie, args.tag, args.movie_format)
+    evaluate_flow_generator(args.movie, args.tag, args.movie_format, maxval=args.maxval)
 
 
 if __name__ == "__main__":
