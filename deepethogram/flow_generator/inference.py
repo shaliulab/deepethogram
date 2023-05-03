@@ -2,6 +2,7 @@ from functools import partial
 import logging
 import os
 import shutil
+import pickle
 import sys
 from typing import Union
 
@@ -20,6 +21,7 @@ from deepethogram.data.augs import get_cpu_transforms, get_gpu_transforms
 from deepethogram.data.datasets import VideoIterable
 from deepethogram.flow_generator.train import build_model_from_cfg as build_flow_generator
 from deepethogram.flow_generator.utils import flow_to_rgb_polar, flow_to_rgb
+from deepethogram.flow_generator.utils import flow_to_polar, polar_to_rgb
 log = logging.getLogger(__name__)
 
 
@@ -56,6 +58,8 @@ def extract_movie(in_video,
     dataloader = DataLoader(dataset, num_workers=num_workers, batch_size=batch_size)
 
     # log.debug('model training mode: {}'.format(model.training))
+    angles = []
+    magnitudes = []
     with VideoWriter(out_video, movie_format, **kwargs) as vid:
         for i, batch in enumerate(tqdm(dataloader, leave=False)):
             if isinstance(batch, dict):
@@ -84,7 +88,13 @@ def extract_movie(in_video,
                 # squeeze batch dimension
                 flow = flow.squeeze()
                 flow = flow.detach().cpu().numpy().transpose(1, 2, 0)
-                flow_map = convert(flow)
+                
+                mag, ang = flow_to_polar(flow)
+                magnitudes.append(mag)
+                angles.append(ang)
+                flow_map = polar_to_rgb(flow.shape, mag, ang, maxval)
+                # flow_map = convert(flow)
+
                 if save_rgb_side_by_side:
                     images = gpu_transform['denormalize'](images)
                     im = images[:, :, 5, ...].squeeze().detach().cpu().numpy()
@@ -95,6 +105,12 @@ def extract_movie(in_video,
                 else:
                     out = flow_map
                 vid.write(out)
+    
+    magnitudes=np.stack(magnitudes, axis=2)
+    angles=np.stack(angles, axis=2)
+    with open(os.path.join(os.path.dirname(out_video), "polar_coords.pkl"), "wb") as filehandle:
+        pickle.dump({"magnitudes": magnitudes, "angles": angles}, filehandle)
+
 
 
 def get_run_files_from_weights(weightfile: Union[str, os.PathLike], metrics_prefix='classification') -> dict:
