@@ -65,6 +65,27 @@ def rgb_to_flow(image: np.ndarray, maxval: Union[int, float] = 20):
     return image[..., 0:2]
 
 
+def flow_to_polar(flow):
+    flow = flow.astype(np.float32)
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    mag[np.isinf(mag)] = 0
+
+    return mag, ang
+
+def polar_to_rgb(shape, mag, ang, maxval):
+    hsv = np.zeros((shape[0], shape[1], 3), dtype=np.uint8)
+    # value is all 255
+    hsv[:, :, 2] = 255
+    # angle -> hue
+    hsv[..., 0] = ang * 180 / np.pi / 2
+    # magnitue -> saturation
+    color = (mag.astype(np.float32) / maxval).clip(0, 1)
+    color = (color * 255).clip(0, 255).astype(np.uint8)
+    # hsv[...,1] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+    hsv[..., 1] = color
+    rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    return rgb
+
 def flow_to_rgb_polar(flow: np.ndarray, maxval: Union[int, float] = 20) -> np.ndarray:
     """ Converts flow to RGB by mapping angle -> hue and magnitude -> saturation.
 
@@ -85,20 +106,8 @@ def flow_to_rgb_polar(flow: np.ndarray, maxval: Union[int, float] = 20) -> np.nd
         RGB image
     """
     # check for float16
-    flow = flow.astype(np.float32)
-    hsv = np.zeros((flow.shape[0], flow.shape[1], 3), dtype=np.uint8)
-    # value is all 255
-    hsv[:, :, 2] = 255
-    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-    mag[np.isinf(mag)] = 0
-    # angle -> hue
-    hsv[..., 0] = ang * 180 / np.pi / 2
-    # magnitue -> saturation
-    color = (mag.astype(np.float32) / maxval).clip(0, 1)
-    color = (color * 255).clip(0, 255).astype(np.uint8)
-    # hsv[...,1] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
-    hsv[..., 1] = color
-    rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    mag, ang = flow_to_polar(flow)
+    rgb = polar_to_rgb(flow.shape, mag, ang, maxval)
     return rgb
 
 
