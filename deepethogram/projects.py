@@ -635,7 +635,7 @@ def get_record_from_subdir(subdir: Union[str, os.PathLike]) -> dict:
     return parsed_record
 
 
-def get_records_from_datadir(datadir: Union[str, bytes, os.PathLike]) -> dict:
+def get_records_from_datadir(datadir: Union[str, bytes, os.PathLike], cleanup: bool = False) -> dict:
     """ Gets a dictionary of record dictionaries from a data directory
 
     Parameters
@@ -663,7 +663,19 @@ def get_records_from_datadir(datadir: Union[str, bytes, os.PathLike]) -> dict:
         parsed_record = get_record_from_subdir(os.path.join(datadir, subdir))
         records[parsed_record['key']] = parsed_record
     # write_all_records(datadir)
-    return records
+
+    final_records = {}
+
+        
+    for key, record in records.items():
+        final_records[key]=record
+        if cleanup and record["rgb"] is None and record["label"] is None:
+            path=os.path.join(datadir, key)
+            print(path)
+            shutil.rmtree(path)
+            del final_records[key]
+
+    return final_records
 
 
 def filter_records_for_filetypes(records: dict, return_types: list):
@@ -674,12 +686,14 @@ def filter_records_for_filetypes(records: dict, return_types: list):
         # v is the dictionary with files found for this record, e.g.
         # {rgb: movie.avi, label: labels.csv, flow: None, output: None}
         all_present = True
+
         for t in return_types:
             if v[t] is None:
                 log.warning('No {} file found in record: {}'.format(t, k))
                 all_present = False
         if all_present:
             valid_records[k] = v
+
     return valid_records
 
 
