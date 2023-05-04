@@ -161,7 +161,11 @@ def feature_extractor_train(cfg: DictConfig) -> nn.Module:
     torch.cuda.empty_cache()
     gc.collect()
 
-    model = HiddenTwoStream(flow_generator, spatial_classifier, flow_classifier, fusion, cfg.feature_extractor.arch)
+    model = HiddenTwoStream(
+        flow_generator, spatial_classifier, flow_classifier, fusion, cfg.feature_extractor.arch,
+        num_images=cfg.feature_extractor.n_flows+1
+    )
+
     model.set_mode('classifier')
     datasets, data_info = get_datasets_from_cfg(cfg,
                                                 model_type='feature_extractor',
@@ -264,7 +268,10 @@ def build_model_from_cfg(cfg: DictConfig,
     if feature_extractor_weights is not None:
         fusion = utils.load_feature_extractor_components(fusion, feature_extractor_weights, 'fusion', device=device)
 
-    model = HiddenTwoStream(flow_generator, spatial_classifier, flow_classifier, fusion, cfg.feature_extractor.arch)
+    model = HiddenTwoStream(
+        flow_generator, spatial_classifier, flow_classifier, fusion, cfg.feature_extractor.arch,
+        num_images=cfg.feature_extractor.n_flows+1
+    )
     # log.info(model.fusion.flow_weight)
     model.set_mode('classifier')
 
