@@ -9,6 +9,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2.QtWidgets import QSplitter
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -16,6 +18,11 @@ class Ui_MainWindow(object):
         MainWindow.resize(1810, 975)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
+
+        self.splitter = QSplitter(QtCore.Qt.Vertical, self.centralwidget)  # Create a vertical splitter
+        self.splitter.setObjectName("splitter")
+
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.widget = QtWidgets.QWidget(self.centralwidget)
@@ -149,24 +156,46 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.exportPredictions)
         self.verticalLayout.addWidget(self.groupBox_4)
         self.horizontalLayout.addWidget(self.widget)
+        
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setObjectName("verticalLayout_2")
+        
         self.videoPlayer = VideoPlayer(self.centralwidget)
         self.videoPlayer.setObjectName("videoPlayer")
-        self.verticalLayout_2.addWidget(self.videoPlayer)
-        self.labels = LabelImg(self.centralwidget)
+
+        self.splitter.addWidget(self.videoPlayer)
+        # self.verticalLayout_2.addWidget(self.videoPlayer)
+
+        self.labels = LabelImg(self.splitter)
         self.labels.setObjectName("labels")
         self.label_4 = QtWidgets.QLabel(self.labels)
         self.label_4.setGeometry(QtCore.QRect(10, 270, 55, 16))
         self.label_4.setObjectName("label_4")
-        self.verticalLayout_2.addWidget(self.labels)
-        self.predictions = LabelImg(self.centralwidget)
+        # self.splitter.addWidget(self.labels)
+        # self.verticalLayout_2.addWidget(self.labels)
+        
+        self.predictions = LabelImg(self.splitter)
+        # self.splitter.addWidget(self.splitter)
+
         self.predictions.setObjectName("predictions")
         self.label_5 = QtWidgets.QLabel(self.predictions)
         self.label_5.setGeometry(QtCore.QRect(10, 270, 71, 20))
         self.label_5.setObjectName("label_5")
-        self.verticalLayout_2.addWidget(self.predictions)
-        self.horizontalLayout.addLayout(self.verticalLayout_2)
+        # self.verticalLayout_2.addWidget(self.predictions)
+        
+
+        # Optionally, increase the maximum height of labels and predictions if needed
+        self.labels.setMaximumHeight(10000)  # Example large value, adjust as needed
+        self.predictions.setMaximumHeight(10000)  # Example large value, adjust as needed
+
+        # Adjust initial sizes of the widgets in the splitter
+        # The numbers represent the relative sizes of the videoPlayer, labels, and predictions
+        initialSizes = [1, 3, 3]  # This gives more initial space to labels and predictions
+        self.splitter.setSizes(initialSizes)
+
+        self.horizontalLayout.addWidget(self.splitter)
+
+        # self.horizontalLayout.addLayout(self.verticalLayout_2)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1810, 22))
