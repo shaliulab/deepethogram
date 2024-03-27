@@ -357,7 +357,7 @@ def get_classes_from_project(config: Union[dict, str, os.PathLike, DictConfig]) 
     assert 'project' in list(config.keys()), 'Invalid project configuration dictionary: {}'.format(config)
     project = config['project']
     assert 'class_names' in list(project.keys()), 'Must have class names in project config file'
-    return project['project']['class_names']
+    return project['class_names']
 
 
 def exclude_strings_from_filelist(files: list, excluded: list) -> list:
