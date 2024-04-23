@@ -18,7 +18,7 @@ def read_labels(labelfile: Union[str, os.PathLike]) -> np.ndarray:
         label = read_label_hdf5(labelfile)
         # return(read_label_hdf5(labelfile))
     else:
-        raise ValueError('Unknown labeltype: {}'.format(labeltype))
+        raise ValueError('Unknown labeltype: {} in {}'.format(labeltype, labelfile))
     H, W = label.shape
     # labels should be time x num_behaviors
     if W > H:

@@ -392,7 +392,7 @@ def find_labelfiles(root: Union[str, bytes, os.PathLike]) -> list:
         files: list of score or label files
     """
     files = get_subfiles(root, return_type='file')
-    files = [i for i in files if 'label' in os.path.basename(i).lower() or 'score' in os.path.basename(i).lower()]
+    files = [i for i in files if ('label' in os.path.basename(i).lower() or 'score' in os.path.basename(i).lower()) and ".dvc" not in os.path.basename(i).lower()]
     return files
 
 
@@ -700,7 +700,13 @@ def get_number_finalized_labels(config: dict) -> int:
             if filetype == 'label':
                 if fileloc is None or len(fileloc) == 0:
                     continue
-                label = read_labels(fileloc)
+                try:
+                    label = read_labels(fileloc)
+                except ValueError:
+                    label=None
+                
+                if label is None:
+                    continue
                 has_unlabeled_frames = np.any(label == -1)
                 if not has_unlabeled_frames:
                     number_valid_labels += 1
