@@ -806,8 +806,9 @@ def import_outputfile(project_dir: Union[str, os.PathLike],
         if thresholds.ndim == 2:
             # this should not happen
             thresholds = thresholds[-1, :]
+
         loaded_class_names = f[key]['class_names'][:]
-        if type(loaded_class_names[0]) == bytes:
+        if type(loaded_class_names[0]) == bytes or isinstance(loaded_class_names[0], np.bytes_):
             loaded_class_names = [i.decode('utf-8') for i in loaded_class_names]
     log.debug('probabilities shape: {}'.format(probabilities.shape))
 
