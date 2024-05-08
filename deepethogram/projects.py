@@ -1,4 +1,5 @@
 import logging
+import pickle
 import os
 import re
 import shutil
@@ -641,13 +642,32 @@ def get_records_from_datadir(datadir: Union[str, bytes, os.PathLike]) -> dict:
         }
     """
     assert os.path.isdir(datadir), 'datadir does not exist: {}'.format(datadir)
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    cache_file=os.path.join(datadir, f"index_{today}.pkl")
+    if os.path.exists(cache_file):
+        return restore_file(cache_file)
+
+
     subdirs = get_subfiles(datadir, return_type='directory')
     records = {}
     for subdir in subdirs:
         parsed_record = get_record_from_subdir(os.path.join(datadir, subdir))
         records[parsed_record['key']] = parsed_record
     # write_all_records(datadir)
+
+    save_file(cache_file, records)
     return records
+
+def restore_file(file):
+    with open(file, "rb") as handle:
+        out = pickle.load(handle)
+    return out
+
+def save_file(file, data):
+    with open(file, "wb") as handle:
+        pickle.dump(data, handle)
+
 
 
 def filter_records_for_filetypes(records: dict, return_types: list):

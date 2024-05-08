@@ -227,9 +227,15 @@ class Ui_MainWindow(object):
         self.actionRemove.setObjectName("actionRemove")
         self.actionStyle = QtWidgets.QAction(MainWindow)
         self.actionStyle.setObjectName("actionStyle")
+    
         self.actionOpen = QtWidgets.QAction(MainWindow)
         self.actionOpen.setEnabled(False)
         self.actionOpen.setObjectName("actionOpen")
+        
+        self.actionOpen_no_preds = QtWidgets.QAction(MainWindow)
+        self.actionOpen_no_preds.setEnabled(False)
+        self.actionOpen_no_preds.setObjectName("actionOpen_no_preds")
+
         self.actionEdit_list = QtWidgets.QAction(MainWindow)
         self.actionEdit_list.setObjectName("actionEdit_list")
         self.actionNext = QtWidgets.QAction(MainWindow)
@@ -256,6 +262,7 @@ class Ui_MainWindow(object):
         self.menuBehaviors.addAction(self.actionAdd)
         self.menuBehaviors.addAction(self.actionRemove)
         self.menuVideo.addAction(self.actionOpen)
+        self.menuVideo.addAction(self.actionOpen_no_preds)
         self.menuVideo.addAction(self.actionAdd_multiple)
         self.menuImport.addAction(self.importLabels)
         self.menuBatch.addAction(self.classifierInference)
@@ -304,6 +311,7 @@ class Ui_MainWindow(object):
         self.actionRemove.setText(QtWidgets.QApplication.translate("MainWindow", "Remove", None, -1))
         self.actionStyle.setText(QtWidgets.QApplication.translate("MainWindow", "Style", None, -1))
         self.actionOpen.setText(QtWidgets.QApplication.translate("MainWindow", "Add or open", None, -1))
+        self.actionOpen_no_preds.setText(QtWidgets.QApplication.translate("MainWindow", "Add or open (no predictions)", None, -1))
         self.actionEdit_list.setText(QtWidgets.QApplication.translate("MainWindow", "Edit list", None, -1))
         self.actionNext.setText(QtWidgets.QApplication.translate("MainWindow", "Next", None, -1))
         self.actionPrevious.setText(QtWidgets.QApplication.translate("MainWindow", "Previous", None, -1))

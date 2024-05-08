@@ -5,6 +5,9 @@ import sys
 import traceback
 from functools import partial
 from typing import Union
+import time
+
+DEBUG=False
 
 import cv2
 # import hydra
@@ -44,6 +47,7 @@ class MainWindow(QMainWindow):
         # print(dir(self.ui.actionOpen))
         self.ui.videoBox.setLayout(self.ui.formLayout)
         self.ui.actionOpen.triggered.connect(self.open_avi_browser)
+        self.ui.actionOpen_no_preds.triggered.connect(self.open_avi_browser_no_preds)
         # self.ui.plainTextEdit.textChanged.connect(self.text_change)
         self.ui.actionAdd.triggered.connect(self.add_class)
         self.ui.actionRemove.triggered.connect(self.remove_class)
@@ -169,6 +173,7 @@ class MainWindow(QMainWindow):
 
     def project_loaded_buttons(self):
         self.ui.actionOpen.setEnabled(True)
+        self.ui.actionOpen_no_preds.setEnabled(True)
         self.ui.actionAdd.setEnabled(True)
         self.ui.actionRemove.setEnabled(True)
         number_finalized_labels = projects.get_number_finalized_labels(self.cfg)
@@ -198,14 +203,27 @@ class MainWindow(QMainWindow):
         self.unfinalized = projects.get_unfinalized_records(self.cfg)
         self.unfinalized_idx = 0
 
-    def video_loaded_buttons(self):
+    def video_loaded_buttons(self, debug: bool =False):
+        before=time.time()
+        records = projects.get_records_from_datadir(self.data_path)
+        after=time.time()
+        if debug:
+            print(f"get_records_from_datadir in {after-before} seconds")
+
+        before=time.time()
         self.ui.finalize_labels.setEnabled(True)
         self.ui.actionSave_Project.setEnabled(True)
-        records = projects.get_records_from_datadir(self.data_path)
         if len(records) > 1:
             self.ui.flow_train.setEnabled(True)
+        after=time.time()
+        if debug:
+            print(f"video_loaded_buttons in {after-before} seconds")
 
-    def initialize_video(self, videofile: Union[str, os.PathLike]):
+    def initialize_video(self, videofile: Union[str, os.PathLike], predictions: bool = True):
+        """
+        Load a video from the DEG database
+        """
+        
         if hasattr(self, 'vid'):
             self.vid.close()
             # if hasattr(self.vid, 'cap'):
@@ -220,8 +238,7 @@ class MainWindow(QMainWindow):
 
             log.debug('is deg: {}'.format(projects.is_deg_file(videofile)))
 
-            if os.path.normpath(
-                    self.cfg.project.data_path) in os.path.normpath(videofile) and projects.is_deg_file(videofile):
+            if os.path.normpath(self.cfg.project.data_path) in os.path.normpath(videofile) and projects.is_deg_file(videofile):
                 record = projects.get_record_from_subdir(os.path.dirname(videofile))
                 log.info('Record for loaded video: {}'.format(record))
                 labelfile = record['label']
@@ -229,14 +246,14 @@ class MainWindow(QMainWindow):
                 self.labelfile = labelfile
                 self.outputfile = outputfile
                 if labelfile is not None:
-                    self.import_labelfile(labelfile)
+                    self.import_labelfile(labelfile, debug=DEBUG)
                 else:
-                    self.initialize_label()
-                if outputfile is not None:
-                    self.import_outputfile(outputfile, first_time=True)
+                    self.initialize_label(debug=DEBUG)
+                if outputfile is not None and predictions:
+                    self.import_outputfile(outputfile, first_time=True, debug=DEBUG)
                 else:
                     self.ui.predictionsCombo.clear()
-                    self.initialize_prediction()
+                    self.initialize_prediction(debug_time=DEBUG)
             else:
                 log.info('Copying {} to your DEG directory'.format(videofile))
                 new_loc = projects.add_video_to_project(OmegaConf.to_container(self.cfg), videofile)
@@ -246,18 +263,25 @@ class MainWindow(QMainWindow):
                     utils.load_yaml(os.path.join(os.path.dirname(self.videofile), 'record.yaml'))))
                 self.initialize_label()
                 self.initialize_prediction()
-            self.video_loaded_buttons()
+            self.video_loaded_buttons(debug=DEBUG)
         except BaseException as e:
             log.exception('Error initializing video: {}'.format(e))
             tb = traceback.format_exc()
             print(tb)
             return
+        
+        before=time.time()
         self.ui.videoPlayer.videoView.update_frame(0, force=True)
         self.setWindowTitle('DeepEthogram: {}'.format(self.cfg.project.name))
-        self.update_video_info()
+        after=time.time()
+        if DEBUG:
+            print(f"Update GUI in {after-before} seconds")
+
+        self.update_video_info(debug=DEBUG)
         self.user_did_something()
 
-    def update_video_info(self):
+    def update_video_info(self, debug: bool = False):
+        before=time.time()
         name = os.path.basename(self.videofile)
         nframes = self.n_timepoints
 
@@ -280,12 +304,17 @@ class MainWindow(QMainWindow):
         self.ui.fpsLabel.setText(fps)
 
         self.ui.labels.label.num_changed.connect(self.update_num_labeled)
+        after=time.time()
+        if debug:
+            print(f"update_video_info in {after-before} seconds")
 
     def update_num_labeled(self, n: Union[int, str]):
         self.ui.nlabeledLabel.setText('{:,}'.format(n))
         self.ui.nunlabeledLabel.setText('{:,}'.format(self.n_timepoints - n))
 
     def initialize_label(self, label_array: np.ndarray = None, debug: bool = False):
+        before=time.time()
+
         if self.cfg.project is None:
             raise ValueError('must load or create project before initializing a label!')
         self.ui.labels.initialize(behaviors=OmegaConf.to_container(self.cfg.project.class_names),
@@ -301,12 +330,18 @@ class MainWindow(QMainWindow):
         self.ui.labels.label.saved.connect(self.update_saved)
         self.initialized_label = True
         self.update()
+        after=time.time()
+        if debug:
+            print(f"initialize_label in {after-before} seconds")
 
     def initialize_prediction(self,
                               prediction_array: np.ndarray = None,
+                              debug_time: bool = False,
                               debug: bool = False,
                               opacity: np.ndarray = None):
 
+        before=time.time()
+        
         # do all the setup for labels and predictions
         self.ui.predictions.initialize(behaviors=OmegaConf.to_container(self.cfg.project.class_names),
                                        n_timepoints=self.n_timepoints,
@@ -321,6 +356,9 @@ class MainWindow(QMainWindow):
         self.ui.predictions.buttons.fix()
         self.initialized_prediction = True
         self.update()
+        after=time.time()
+        if debug_time:
+            print(f"initialize_prediction in {after-before} seconds")
 
     def generate_flow_train_args(self):
         args = ['python', '-m', 'deepethogram.flow_generator.train', 'project.path={}'.format(self.cfg.project.path)]
@@ -806,13 +844,19 @@ class MainWindow(QMainWindow):
         # self.save_to_hdf5()
         self.saved = True
 
-    def import_labelfile(self, labelfile: Union[str, os.PathLike]):
+    def import_labelfile(self, labelfile: Union[str, os.PathLike], debug: bool = False):
+        
+        before=time.time()
+
         if labelfile is None:
             self.initialize_label()
         assert (os.path.isfile(labelfile))
         df = pd.read_csv(labelfile, index_col=0)
         array = df.values
         self.initialize_label(label_array=array)
+        after=time.time()
+        if debug:
+            print(f"import_labelfile in {after-before} seconds")
 
     def import_external_labels(self):
         if self.data_path is not None:
@@ -841,7 +885,8 @@ class MainWindow(QMainWindow):
 
         self.import_labelfile(label_dst)
 
-    def import_outputfile(self, outputfile: Union[str, os.PathLike], latent_name=None, first_time: bool = False):
+    def import_outputfile(self, outputfile: Union[str, os.PathLike], latent_name=None, first_time: bool = False, debug: bool = False):
+        before=time.time()
 
         if outputfile is None:
             self.initialize_prediction()
@@ -897,6 +942,9 @@ class MainWindow(QMainWindow):
             self.ui.predictionsCombo.setCurrentText(latent_name)
         self.update()
         self.user_did_something()
+        after=time.time()
+        if debug:
+            print(f"import_outputfile in {after-before} seconds")
 
     def export_predictions(self):
         array = self.estimated_labels
@@ -945,7 +993,10 @@ class MainWindow(QMainWindow):
         self.user_did_something()
         # print(changed)
 
-    def open_avi_browser(self):
+    def open_avi_browser_no_preds(self):
+        self.open_avi_browser(predictions=False)
+
+    def open_avi_browser(self, **kwargs):
         if self.data_path is not None:
             data_dir = self.data_path
         else:
@@ -963,7 +1014,7 @@ class MainWindow(QMainWindow):
             filename = os.path.dirname(filename)
             assert os.path.isdir(filename)
 
-        self.initialize_video(filename)
+        self.initialize_video(filename, **kwargs)
         self.user_did_something()
 
     def add_multiple_videos(self):
