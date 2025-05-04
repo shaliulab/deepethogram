@@ -682,7 +682,6 @@ class KeypointDataset(SingleSequenceDataset):
         data['features'] = self.sequence[:, indices]
         return data
 
-
 class FeatureVectorDataset(SingleSequenceDataset):
     """Reads image and flow feature vectors from HDF5 files. 
     """
@@ -723,11 +722,11 @@ class FeatureVectorDataset(SingleSequenceDataset):
 
     def verify_dataset(self):
         with h5py.File(self.data_file, 'r') as f:
-            assert self.logit_key in f
+            assert self.logit_key in f, f"{self.logit_key} not in {self.data_file}"
 
             if self.is_two_stream:
-                assert self.flow_key in f
-                assert self.image_key in f
+                assert self.flow_key in f, f"{self.flow_key} not in {self.data_file}"
+                assert self.image_key in f, f"{self.image_key} not in {self.data_file}"
                 flow_shape = f[self.flow_key].shape
                 image_shape = f[self.image_key].shape
                 assert flow_shape[0] == image_shape[0]
@@ -765,21 +764,89 @@ class FeatureVectorDataset(SingleSequenceDataset):
         return data
 
 
+
+class FlyHostelDataset(SingleSequenceDataset):
+    """Reads image and flow feature vectors from FlyHostel HDF5 files. 
+    """
+
+    def __init__(self,
+                 data_file,
+                 labelfile,
+                 h5_key: str,
+                 store_in_ram=False,
+                 is_two_stream: bool = True,
+                 *args,
+                 **kwargs):
+
+        self.store_in_ram = store_in_ram
+        assert os.path.isfile(data_file)
+        self.key = h5_key
+        self.features_key = self.key + '/features'
+        self.logit_key = self.key + '/P'
+        self.data_file = data_file
+
+        self.verify_dataset()
+        data = self.read_features_from_disk(None, None)
+
+        features_shape = data['features'].shape
+        self.shape = features_shape
+        self.N = self.shape[1]
+        if self.store_in_ram:
+            self.data = data
+        else:
+            del data
+
+        # superclass needs to know number of samples, that's why it's down here
+        super().__init__(data_file, labelfile, self.N, *args, **kwargs)
+
+    def verify_dataset(self):
+        with h5py.File(self.data_file, 'r') as f:
+            assert self.logit_key in f, f"{self.logit_key} not in {self.data_file}"
+            assert self.features_key in f, f"{self.features_key} not in {self.data_file}"
+
+    def read_features_from_disk(self, start_ind, end_ind):
+        inds = slice(start_ind, end_ind)
+        with h5py.File(self.data_file, 'r') as f:
+            features_shape = f[self.features_key].shape
+            assert len(features_shape) == 2
+            # we want each timepoint to be one COLUMN
+            sequence = f[self.features_key][inds, :].T
+            logits = f[self.logit_key][inds, :].T
+    
+        return dict(features=sequence, logits=logits)
+
+    def read_sequence(self, indices):
+        if self.store_in_ram:
+            data = {'features': self.data['features'][:, indices], 'logits': self.data['logits'][:, indices]}
+        else:
+            # assume indices are in order
+            # we use the start and end so that we can slice without knowing the exact size of the dataset
+            data = self.read_features_from_disk(indices[0], indices[-1] + 1)
+        return data
+
+
+
+
 class SequenceDataset(data.Dataset):
     """ Simple wrapper around SingleSequenceDataset for smoothly loading multiple sequences """
 
-    def __init__(self,
-                 datafiles: list,
-                 labelfiles: list,
-                 videofiles: list = None,
-                 is_keypoint: bool = False,
-                 *args,
-                 **kwargs):
+    def __init__(
+            self,
+            datafiles: list,
+            labelfiles: list,
+            videofiles: list = None,
+            is_keypoint: bool = False,
+            is_flyhostel: bool = False,
+            *args,
+            **kwargs
+        ):
         datasets = []
         for i, (datafile, labelfile) in enumerate(zip(datafiles, labelfiles)):
             if is_keypoint:
                 assert videofiles is not None
                 dataset = KeypointDataset(datafile, labelfile, videofiles[i], *args, **kwargs)
+            elif is_flyhostel:
+                dataset = FlyHostelDataset(datafile, labelfile, *args, **kwargs)
             else:
                 dataset = FeatureVectorDataset(datafile, labelfile, *args, **kwargs)
             datasets.append(dataset)
@@ -963,6 +1030,7 @@ def get_sequence_datasets(datadir: Union[str, os.PathLike],
                           reduce=False,
                           valid_splits_only: bool = True,
                           is_keypoint: bool = False,
+                          is_flyhostel: bool = False,
                           stack_in_time: bool = False) -> Tuple[dict, dict]:
     """ Gets dataloaders for sequence models assuming DeepEthogram file structure.
 
@@ -1109,6 +1177,7 @@ def get_sequence_datasets(datadir: Union[str, os.PathLike],
                                               store_in_ram=store_in_ram,
                                               reduce=reduce,
                                               is_keypoint=is_keypoint,
+                                              is_flyhostel=is_flyhostel,
                                               stack_in_time=stack_in_time)
 
     # figure out what our inputs to our model will be (D dimension)
@@ -1202,7 +1271,8 @@ def get_datasets_from_cfg(cfg: DictConfig, model_type: str, input_images: int = 
                                                reduce=cfg.feature_extractor.final_activation == 'softmax',
                                                valid_splits_only=True,
                                                stack_in_time=cfg.sequence.arch == 'mlp',
-                                               is_keypoint=cfg.sequence.input_type == 'keypoints')
+                                               is_keypoint=cfg.sequence.input_type == 'keypoints',
+                                               is_flyhostel=cfg.sequence.input_type == "flyhostel")
     else:
         raise ValueError('Unknown model type: {}'.format(model_type))
     return datasets, info
