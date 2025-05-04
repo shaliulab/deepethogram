@@ -77,19 +77,37 @@ def get_onsets_offsets(binary: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return onsets, offsets
 
 
-def get_bouts(ethogram: np.ndarray) -> list:
+def get_bouts(ethogram: np.ndarray, behaviors: dict = None) -> list:
     """ Get bouts from an ethogram. Uses 1->0 and 0->1 changes to define bout starts and stops """
     K = ethogram.shape[1]
-    stats = []
-    for i in range(K):
-        onsets, offsets = get_onsets_offsets(ethogram[:, i])
-        stat = {
-            'N': len(onsets),
-            'lengths': np.array([offset - onset for (onset, offset) in zip(onsets, offsets)]),
-            'starts': onsets,
-            'ends': offsets
-        }
-        stats.append(stat)
+    if behaviors is None:
+        stats = []
+        for i in range(K):
+            onsets, offsets = get_onsets_offsets(ethogram[:, i])
+            stat = {
+                'N': len(onsets),
+                'lengths': np.array([offset - onset for (onset, offset) in zip(onsets, offsets)]),
+                'starts': onsets,
+                'ends': offsets
+            }
+            stats.append(stat)
+    else:
+        stats={}
+        for behavior, col_group in behaviors.items():
+            # onsets, offsets = get_onsets_offsets(np.bitwise_and(
+            #     (ethogram[:, col_group]==1).all(axis=1),
+            #     (ethogram[:, ~np.array(col_group)]!=1).all(axis=1)
+            # ))
+            
+            onsets, offsets = get_onsets_offsets((ethogram[:, col_group]==1).all(axis=1))
+            stat = {
+                'N': len(onsets),
+                'lengths': np.array([offset - onset for (onset, offset) in zip(onsets, offsets)]),
+                'starts': onsets,
+                'ends': offsets
+            }
+            stats[behavior]=stat
+
     return stats
 
 
@@ -275,7 +293,7 @@ class MinBoutLengthPerBehaviorPostprocessor(Postprocessor):
         return predictions
 
 
-def get_bout_length_percentile(label_list: list, percentile: float) -> dict:
+def get_bout_length_percentile(label_list: list, percentile: float, behaviors: dict = None) -> dict:
     """gets the Nth percentile of the bout length distribution for each behavior
 
     Parameters
@@ -293,11 +311,18 @@ def get_bout_length_percentile(label_list: list, percentile: float) -> dict:
     bout_lengths = defaultdict(list)
 
     for label in label_list:
-        bouts = get_bouts(label)
+        bouts = get_bouts(label, behaviors=behaviors)
         T, K = label.shape
-        for k in range(K):
-            bout_length = bouts[k]['lengths'].tolist()
-            bout_lengths[k].append(bout_length)
+        if behaviors is None:
+            for k in range(K):
+                bout_length = bouts[k]['lengths'].tolist()
+                bout_lengths[k].append(bout_length)
+        else:
+            for behavior in bouts.keys():
+                bout_length=bouts[behavior]['lengths'].tolist()
+                bout_lengths[behavior].append(bout_length)
+
+
     bout_lengths = {behavior: np.concatenate(value) for behavior, value in bout_lengths.items()}
     # print(bout_lengths)
     percentiles = {}
